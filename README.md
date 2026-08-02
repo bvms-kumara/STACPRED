@@ -124,7 +124,7 @@ Launch the Flask Server:
 
 python web_app/app.py
 
-ccess the Web Console: Open your browser and navigate to http://127.0.0.1:8000.
+Access the Web Console: Open your browser and navigate to http://127.0.0.1:8000.
 
 Execute Predictions:
 
