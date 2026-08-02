@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STACPRED - Learn More: Architecture & Methodology</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* KEYFRAME ANIMATION FOR BACKGROUND SHIFT (for body) */
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 0%;
+            }
+            50% {
+                background-position: 100% 100%;
+            }
+            100% {
+                background-position: 0% 0%;
+            }
+        }
+        
+        /* SUBTLE GLOW ANIMATION FOR PANELS */
+        @keyframes subtle-glow {
+            0%, 100% {
+                /* Base state shadow (from your original glass-panel) */
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            }
+            50% {
+                /* Subtle blue/purple inner glow */
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(74, 144, 226, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            }
+        }
+
+        /* BASE STYLES & BACKGROUND (Inherited from Console) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Deep Slate Background */
+            color: #c9d1d9;
+            min-height: 100vh;
+            
+            /* Cosmic Gradient Background */
+            background-image: radial-gradient(at 0% 0%, #1a2a47 0px, transparent 40%),
+                              radial-gradient(at 100% 100%, #301747 0px, transparent 40%);
+            
+            /* Apply Background Animation */
+            background-size: 150% 150%; /* Larger size allows shifting */
+            background-attachment: fixed;
+            animation: gradient-shift 30s ease infinite; /* 30s loop time */
+
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* GLASS PANEL - Tighter & More Defined Glassmorphism */
+        .glass-panel {
+            background-color: rgba(13, 17, 23, 0.75);
+            border: 1px solid rgba(48, 54, 61, 0.5);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            /* Apply Subtle Glow Animation */
+            animation: subtle-glow 8s ease-in-out infinite; 
+        }
+        
+        .page-card {
+            max-width: 1400px;
+            width: 95%;
+            margin: auto;
+        }
+        
+        /* Highlight boxes for models/data */
+        .highlight-box {
+            background-color: #161b22;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #30363d;
+            transition: all 0.3s ease;
+        }
+        
+        /* Monospace for code/data */
+        code {
+            font-family: 'Space Mono', monospace;
+            background-color: #161b22;
+            color: #4a90e2; /* Clearer Blue */
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        /* --- CORRECTED WORKFLOW ARROW STYLES --- */
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1.5rem 0;
+            position: relative;
+            height: 40px; /* Ensure space for the arrow */
+        }
+        
+        .workflow-step::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 0;
+            height: 40px;
+            border-left: 2px dashed #58a6ff; /* Dashed line */
+            transform: translateY(-50%);
+        }
+        
+        .workflow-step::before {
+            content: '▼';
+            position: absolute;
+            top: 100%; /* Position the triangle arrow below the line */
+            color: #58a6ff;
+            font-size: 1.5rem;
+            line-height: 0;
+            transform: translateY(-50%); /* Center vertically relative to the box gap */
+        }
+        
+        .workflow-step:last-child::after, .workflow-step:last-child::before {
+            content: '';
+        }
+        /* ------------------------------------- */
+        
+        /* Accordion Styles - Modernized */
+        .accordion-item { 
+            border: 1px solid #30363d; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            transition: border-color 0.3s;
+        }
+        .accordion-item:hover {
+            border-color: #58a6ff;
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.1);
+        }
+        .accordion-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background-color: rgba(22, 27, 34, 0.8);
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .accordion-header:hover {
+            background-color: rgba(48, 54, 61, 0.5);
+        }
+        .accordion-content {
+            padding: 1.5rem;
+            border-top: 1px solid #30363d;
+            background-color: rgba(13, 17, 23, 0.9);
+            display: none;
+            transition: height 0.3s ease-in-out;
+        }
+        .arrow {
+            transition: transform 0.3s;
+            font-size: 1.2rem;
+        }
+        .open .arrow {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-card space-y-12">
+
+        <header class="flex flex-col md:flex-row items-start md:items-center justify-between border-b-2 border-blue-500 pb-5 pt-3">
+            <div class="flex items-start mb-3 md:mb-0">
+                <div class="p-3 bg-blue-600 rounded-xl mr-4 shadow-xl">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <h1 class="text-4xl font-extrabold text-blue-400 tracking-tight">
+                    STACPRED <span class="text-white font-light">| Architecture & Methodology</span>
+                </h1>
+            </div>
+            
+            <div class="flex flex-col items-start md:items-end space-y-3">
+                <nav class="flex space-x-4 text-sm md:text-lg font-medium">
+                    <a href="/" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Console</a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/developers.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Developers<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/research.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Research<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/about.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">About<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                </nav>
+            </div>
+        </header>
+
+        <div class="glass-panel p-10">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3 text-white"><span class="text-blue-400">1.</span> Stacked Generalization Architecture</h2>
+    
+    <h3 style="color: #63b3ed; border-bottom: 2px solid #63b3ed; padding-bottom: 5px; margin-top: 20px;">
+        🚀 The Power of Consensus: Building a Superior Drug Discovery Model
+    </h3>
+    
+    <p style="margin-top: 15px;">
+        In computational drug discovery, predicting **Binding Energy** ($E_{bind}$) is critical. Relying on a single docking algorithm or ML model introduces inherent biases. Our solution is **Meta-Learning**, which combines diverse predictions into one consensus score, outperforming any single expert.
+    </p>
+    
+    <h4 style="color: #90cdf4; margin-top: 15px;">🏗️ Architecture: Two Tiers of Expertise</h4>
+    
+    <h5 style="color: #a0aec0; margin-top: 10px;">Tier 1: The 8 Base Experts (Level-0)</h5>
+    
+    <p>
+        We train eight specialized models, capturing maximum predictive diversity:
+    </p>
+    
+    <ul style="list-style-type: disc; margin-left: 20px; color: #a0aec0;">
+        <li>**Docking Inputs:** Features from **AutoDock4**, **DOCK6**, **Vina**, and **Vinardo**.</li>
+        <li>**ML Models:** For each docking type, we train both **XGBoost** (tree ensemble) and a highly-tuned **MLP** (neural network).</li>
+    </ul>
+    
+    <p style="margin-top: 10px;">
+        These eight models generate the **Meta-Features** (predictions) for the next tier. A critical step is **Data Alignment**: only molecule-pose combinations present in ALL four docking datasets are used, ensuring a perfectly consistent input for the final model.
+    </p>
+    
+    
+    
+    <h5 style="color: #a0aec0; margin-top: 15px;">Tier 2: The Meta-Learner (Level-1)</h5>
+    
+    <p>
+        The Level-1 model is a **Ridge Regressor** (`RidgeCV`). It doesn't look at the raw features; it is trained only on the eight predictions from Tier 1.
+    </p>
+    
+    <ul style="list-style-type: disc; margin-left: 20px; color: #a0aec0;">
+        <li>**Function:** It learns the optimal **weight (coefficient)** to assign to each of the eight base model predictions.</li>
+        <li>**Robustness:** Ridge Regression includes regularization, which prevents overfitting and ensures the learned weights are stable and reliable across different datasets.</li>
+    </ul>
+    
+    <p style="margin-top: 10px;">
+        The final stacked prediction $\hat{y}_{stacked}$ is a linear combination:
+        <span style="display: block; text-align: center; font-family: monospace; margin-top: 10px;">
+            <code style="background-color: #2d3748; padding: 5px 10px; border-radius: 5px;">
+                E_Stacked = Sum(Weight_i * Prediction_i) + Intercept
+            </code>
+        </span>
+    </p>
+    
+    <h4 style="color: #90cdf4; margin-top: 15px;">📈 Validation and Interpretation</h4>
+    
+    <p>
+        The model's performance is validated on a **15% held-out test set**. The low **Root Mean Squared Error (RMSE)** and high **R-squared ($R^2$)** score confirm that the stacking consensus is superior to any single model. More importantly, analyzing the learned weights reveals exactly which docking features (e.g., Vina scores) combined with which ML model (e.g., XGBoost) the consensus model trusts the most.
+    </p>
+    
+    <br>
+    
+    </p>
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div class="highlight-box hover:shadow-green-500/30">
+                    <p class="text-4xl font-extrabold text-green-400">8</p>
+                    <p class="text-md font-semibold text-gray-400 mt-2">Level-0 Base Learners</p>
+                </div>
+                <div class="highlight-box hover:shadow-purple-500/30">
+                    <p class="text-4xl font-extrabold text-purple-400">RidgeCV</p>
+                    <p class="text-md font-semibold text-gray-400 mt-2">Level-1 Meta-Learner</p>
+                </div>
+                <div class="highlight-box hover:shadow-blue-500/30">
+                    <p class="text-4xl font-extrabold text-blue-400">0.9154</p>
+                    <p class="text-md font-semibold text-gray-400 mt-2">Final Stack $R^2$ Score</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-panel p-10">
+    <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3 text-white"><span class="text-green-400">2.</span> Prediction Workflow: Input to Output 🚀</h2>
+    
+    <div class="space-y-4 text-center">
+        
+        <div class="highlight-box bg-blue-900/40 border-blue-600 hover:shadow-blue-500/30">
+            <span class="text-xl font-extrabold text-white block mb-1">STEP A: Input Molecule (<code class="text-blue-300">.MOL2</code>)</span>
+        </div>
+        
+        <div class="workflow-step"></div>
+        
+        <div class="highlight-box bg-gray-900/40 hover:shadow-gray-500/30">
+            <span class="text-xl font-extrabold text-blue-400 block mb-2">STEP B: Preprocessing & Feature Extraction (Generating over 2,000 Features)</span>
+            <p class="text-sm text-gray-400 text-left px-4">
+                The single <code class="text-blue-300">.MOL2</code> file is immediately processed by the RDKit engine. This stage is critical for generating the **complete feature vector** for the base models.
+            </p>
+            <ul class="text-xs text-gray-400 list-disc ml-8 text-left px-4">
+                <li>**Molecular Robustness:** The molecule is loaded (with coordinates preserved) and passed through a rigorous **sanitization and repair** process to handle unusual chemical structures.</li>
+                <li>**Structural Alignment (3D):** External tool **LSalign** is executed against the reference molecule (<code class="text-sm">4tq_reference.mol2</code>) to compute **PC Scores** and **RMSD** values, capturing essential 3D pose alignment. The **Center-of-Mass (CoM) Distance** is also calculated.</li>
+                <li>**Chemical Descriptors (2D/3D):** Over 30 core descriptors are calculated, including **LogP**, **TPSA**, **MolWt**, **FractionCSP3**, and 3D moments like **Radius of Gyration** and **Asphericity**.</li>
+                <li>**Fingerprints:** **2048-bit ECFP4** (Morgan Fingerprints) are generated, contributing the majority of the feature count (2,048 binary features). Missing values are imputed with zeros for pipeline compatibility.</li>
+            </ul>
+        </div>
+
+        <div class="workflow-step"></div>
+        
+        <div class="highlight-box bg-gray-800/80 border-gray-600 hover:shadow-gray-500/30">
+            <span class="text-xl font-extrabold text-white block mb-2">STEP C: Level-0 Base Prediction (8 Models)</span>
+            <p class="text-sm text-gray-400 text-left px-4">
+                The single feature vector is simultaneously passed to all eight pre-trained model pipelines. Each prediction is executed sequentially but is independent of the others.
+            </p>
+            <ul class="text-xs text-gray-400 list-disc ml-8 text-left px-4">
+                <li>**Model Execution:** The 8 pipelines (4 **x** XGBoost and 4 **x** MLP, covering features from AD4, DOCK6, VINA, and VINARDO) predict the binding affinity based on their specific learned relationships.</li>
+                <li>**Meta-Feature Vector:** The 8 resulting independent affinity scores (e.g., **P(AD4_XGB)**, **P(VINA_MLP)**, etc.) are collected into a single, ordered vector, which is the input for the final layer.</li>
+                <li>**Critical Requirement:** If any single base model prediction fails, the entire consensus workflow is aborted, as the Meta-Learner requires all 8 scores.</li>
+            </ul>
+        </div>
+
+        <div class="workflow-step"></div>
+
+        <div class="highlight-box bg-purple-900/50 border-purple-600 hover:shadow-purple-500/30">
+            <span class="text-xl font-extrabold text-white block mb-2">STEP D: Level-1 Meta-Learner Fusion (RidgeCV)</span>
+            <p class="text-sm text-gray-400 text-left px-4">
+                The final stage uses the pre-loaded **Ridge Regressor** to determine the optimal consensus score.
+            </p>
+            <ul class="text-xs text-gray-400 list-disc ml-8 text-left px-4">
+                <li>**Weight Application:** The Meta-Learner receives the 8-score Meta-Feature Vector, ensures the scores are in the correct order, and applies its learned **coefficients** to weigh each base model's contribution.</li>
+                <li>**Final Output:** The weighted sum yields the single, optimized **Final Consensus Score** in **kCal/mol** for the input molecule, representing the most robust prediction of its binding affinity.</li>
+            </ul>
+        </div>
+    </div>
+        </div>
+
+        <div class="glass-panel p-10">
+    <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-3 text-white"><span class="text-purple-400">3.</span> Level-0 Base Models (The 8 Sub-Models)</h2>
+    <p class="text-gray-300 mb-6">
+        The base layer is comprised of a **4-model XGBoost** sub-ensemble (Tree-based, high variance capture) and a **4-model MLP** sub-ensemble (Neural Network, non-linear relationships), maximizing algorithmic diversity. Each model is a complete pipeline (Preprocessing + Predictor) trained on features unique to its underlying docking algorithm.
+    </p>
+
+    <div class="p-4 mb-6 bg-purple-900/40 border border-purple-600 rounded-lg text-center">
+        <span class="text-lg font-extrabold text-white block">FINAL STACKED CONSENSUS SCORE (TEST SET)</span>
+        <span class="text-3xl font-black text-purple-300 block">R²: 0.9154</span>
+        <span class="text-sm text-gray-400 block">RMSE: 0.3090 | Meta-Learner: RidgeCV</span>
+    </div>
+
+    <div id="model-accordion" class="space-y-4">
+        
+        <div class="accordion-item" style="border-color: #10b981;">
+            <div class="accordion-header text-green-400 font-bold" onclick="toggleAccordion(this)">
+                VINA_XGB_PRED (XGBoost) — **High R² Contributor**
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="accordion-content">
+                <p class="text-md text-gray-300 space-y-2">
+                    <span class="font-bold text-green-300 block">Algorithm:</span> XGBoost Regressor (Tuned for Low Learning Rate 0.008, Max Depth 9)<br>
+                    <span class="font-bold text-green-300 block">Features:</span> Complete feature set derived from **Vina** docking results (including ECFP4, LSalign, RDKit descriptors).<br>
+                    <span class="font-bold text-green-300 block">Performance (Test):</span> **R² = 0.9080** | CV RMSE = 0.1832<br>
+                    <span class="font-bold text-green-300 block">Stacking Weight:</span> **-0.0042** (Indicates high predictive power, but weighted against other high-R2 models.)
+                </p>
+            </div>
+        </div>
+
+        <div class="accordion-item" style="border-color: #a855f7;">
+            <div class="accordion-header text-purple-400 font-bold" onclick="toggleAccordion(this)">
+                VINA_MLP_PRED (MLP) — **High R² Contributor**
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="accordion-content">
+                <p class="text-md text-gray-300 space-y-2">
+                    <span class="font-bold text-purple-300 block">Algorithm:</span> Multilayer Perceptron (MLP) Neural Network (Architecture: 256, 128, 64, 32)<br>
+                    <span class="font-bold text-purple-300 block">Features:</span> Complete feature set derived from **Vina** docking results.<br>
+                    <span class="font-bold text-purple-300 block">Performance (Test):</span> **R² = 0.9057** | CV RMSE = 0.1860<br>
+                    <span class="font-bold text-purple-300 block">Stacking Weight:</span> **-0.0134**
+                </p>
+            </div>
+        </div>
+
+        <div class="accordion-item" style="border-color: #10b981;">
+            <div class="accordion-header text-green-400 font-bold" onclick="toggleAccordion(this)">
+                AD4_XGB_PRED (XGBoost) — **Highest Weighted Model**
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="accordion-content">
+                <p class="text-md text-gray-300 space-y-2">
+                    <span class="font-bold text-green-300 block">Algorithm:</span> XGBoost Regressor (Tuned for Low Learning Rate 0.008, Max Depth 9)<br>
+                    <span class="font-bold text-green-300 block">Features:</span> Complete feature set derived from **AutoDock4** docking results.<br>
+                    <span class="font-bold text-green-300 block">Performance (Test):</span> **R² = 0.6910** | CV RMSE = 0.5728<br>
+                    <span class="font-bold text-green-300 block">Stacking Weight:</span> **1.1769** (This model's prediction is strongly emphasized by the Meta-Learner.)
+                </p>
+            </div>
+        </div>
+        
+        <div class="accordion-item" style="border-color: #a855f7;">
+            <div class="accordion-header text-purple-400 font-bold" onclick="toggleAccordion(this)">
+                AD4_MLP_PRED (MLP)
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="accordion-content">
+                <p class="text-md text-gray-300 space-y-2">
+                    <span class="font-bold text-purple-300 block">Algorithm:</span> Multilayer Perceptron (MLP) Neural Network (Architecture: 256, 128, 64, 32)<br>
+                    <span class="font-bold text-purple-300 block">Features:</span> Complete feature set derived from **AutoDock4** docking results.<br>
+                    <span class="font-bold text-purple-300 block">Performance (Test):</span> **R² = 0.4815** | CV RMSE = 0.7558<br>
+                    <span class="font-bold text-purple-300 block">Stacking Weight:</span> **-0.1364** (Negative weight indicates a mild inversion or compensatory role in the ensemble.)
+                </p>
+            </div>
+        </div>
+        
+        <div class="accordion-item" style="border-color: #10b981;">
+            <div class="accordion-header text-green-400 font-bold" onclick="toggleAccordion(this)">
+                VINARDO_XGB_PRED (XGBoost)
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="accordion-content">
+                <p class="text-md text-gray-300 space-y-2">
+                    <span class="font-bold text-green-300 block">Algorithm:</span> XGBoost Regressor<br>
+                    <span class="font-bold text-green-300 block">Features:</span> Complete feature set derived from **Vinardo** docking results.<br>
+                    <span class="font-bold text-green-300 block">Performance (Test):</span> **R² = 0.6001** | CV RMSE = 0.5022<br>
+                    <span class="font-bold text-green-300 block">Stacking Weight:</span> **0.0036**
+                </p>
+            </div>
+        </div>
+
+        <div class="accordion-item" style="border-color: #a855f7;">
+            <div class="accordion-header text-purple-400 font-bold" onclick="toggleAccordion(this)">
+                VINARDO_MLP_PRED (MLP)
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="accordion-content">
+                <p class="text-md text-gray-300 space-y-2">
+                    <span class="font-bold text-purple-300 block">Algorithm:</span> Multilayer Perceptron (MLP) Neural Network<br>
+                    <span class="font-bold text-purple-300 block">Features:</span> Complete feature set derived from **Vinardo** docking results.<br>
+                    <span class="font-bold text-purple-300 block">Performance (Test):</span> **R² = 0.6037** | CV RMSE = 0.4928<br>
+                    <span class="font-bold text-purple-300 block">Stacking Weight:</span> **-0.0087**
+                </p>
+            </div>
+        </div>
+        
+        <div class="accordion-item" style="border-color: #10b981;">
+            <div class="accordion-header text-green-400 font-bold" onclick="toggleAccordion(this)">
+                DOCK6_XGB_PRED (XGBoost)
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="accordion-content">
+                <p class="text-md text-gray-300 space-y-2">
+                    <span class="font-bold text-green-300 block">Algorithm:</span> XGBoost Regressor<br>
+                    <span class="font-bold text-green-300 block">Features:</span> Complete feature set derived from **DOCK6** docking results.<br>
+                    <span class="font-bold text-green-300 block">Performance (Test):</span> **R² = 0.4505** | CV RMSE = 2.6942<br>
+                    <span class="font-bold text-green-300 block">Stacking Weight:</span> **-0.0016**
+                </p>
+            </div>
+        </div>
+        
+        <div class="accordion-item" style="border-color: #a855f7;">
+            <div class="accordion-header text-purple-400 font-bold" onclick="toggleAccordion(this)">
+                DOCK6_MLP_PRED (MLP)
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="accordion-content">
+                <p class="text-md text-gray-300 space-y-2">
+                    <span class="font-bold text-purple-300 block">Algorithm:</span> Multilayer Perceptron (MLP) Neural Network<br>
+                    <span class="font-bold text-purple-300 block">Features:</span> Complete feature set derived from **DOCK6** docking results.<br>
+                    <span class="font-bold text-purple-300 block">Performance (Test):</span> **R² = 0.3850** | CV RMSE = 2.8349<br>
+                    <span class="font-bold text-purple-300 block">Stacking Weight:</span> **0.0049**
+                </p>
+            </div>
+        </div>
+
+    </div>
+        </div>
+
+        <div> <class="glass-panel p-10">
+    <div class="accordion-item space-y-0" style="border-color: #3b82f6;">
+        <div class="accordion-header text-white font-bold bg-blue-900/40 hover:bg-blue-900/60" onclick="toggleAccordion(this)">
+            <h2 class="text-2xl"><span class="text-blue-400">4.</span> Training Data and Validation Methodology</h2>
+            <span class="arrow text-3xl">&#9660;</span>
+        </div>
+        <div class="accordion-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                
+                <div class="space-y-4 border-l-4 border-blue-500 pl-4">
+                    <h3 class="text-xl font-extrabold text-blue-400">Model Training and Architecture</h3>
+                    
+                    <h4 class="text-lg font-semibold text-gray-200">Level-0 Base Models (8 Total)</h4>
+                    <ul class="list-disc list-inside ml-4 text-sm text-gray-300 space-y-2">
+                        <li>**4 XGBoost Models:** Utilized a tree-based ensemble approach. Key parameters included a low learning rate (0.008), high max depth (9), and early stopping (200 rounds) for maximum accuracy. Trained using GPU (CUDA device).</li>
+                        <li>**4 MLP Models:** Implemented a deep learning approach with a network architecture of **(256, 128, 64, 32)** neurons. Used the 'adam' solver, 'relu' activation, and early stopping to ensure fast, stable convergence and prevent overfitting.</li>
+                        <li>**Data Preprocessing:** All features were scaled using **MinMaxScaler** and categorical features were One-Hot Encoded. Numeric NaNs were imputed with the **median**.</li>
+                    </ul>
+
+                    <h4 class="text-lg font-semibold text-gray-200 mt-4">Level-1 Meta-Learner</h4>
+                    <ul class="list-disc list-inside ml-4 text-sm text-gray-300 space-y-2">
+                        <li>**Algorithm:** **Ridge Regressor (RidgeCV)**, which automatically tunes the optimal regularization strength (alpha) to find the best linear combination of the 8 base predictions.</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-4 border-l-4 border-green-500 pl-4">
+                    <h3 class="text-xl font-extrabold text-green-400">Data Corpus and Validation Details</h3>
+                    
+                    <h4 class="text-lg font-semibold text-gray-200">Data Source and Feature Generation</h4>
+                    <ul class="list-disc list-inside ml-4 text-sm text-gray-300 space-y-2">
+                        <li>**Feature Basis:** Molecular descriptors derived from four distinct docking engines: **AutoDock4, DOCK6, Vina, and Vinardo**.</li>
+                        <li>**Target Column:** **Binding_Energy**. Rows missing this value were dropped before training.</li>
+                        <li>**Feature Types:** Used over 2,000 features, including **ECFP4 (2048-bit)**, RDKit 2D/3D descriptors, and structural alignment metrics (LSalign, CoM distance).</li>
+                    </ul>
+                    
+                    <h4 class="text-lg font-semibold text-gray-200 mt-4">Data Splitting Strategy</h4>
+                    <ul class="list-disc list-inside ml-4 text-sm text-gray-300 space-y-2">
+                        <li>**Split Ratio:** Data was partitioned into **70% Training**, **15% Validation**, and **15% Independent Test Set**.</li>
+                        <li>**Cross-Validation (CV):** A **5-fold CV** was performed on the full Training + Validation set for both the MLP and XGBoost pipelines, ensuring performance stability and guarding against data leakage.</li>
+                        <li>**Evaluation Metrics:** Primary metrics are **Root Mean Squared Error (RMSE)** and **R-squared (R2)**, with **Mean Absolute Error (MAE)** providing secondary validation.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+        
+    </div>
+
+    <script>
+        // *** Accordion Logic (Unchanged but improved closing of others) ***
+        function toggleAccordion(header) {
+            const item = header.closest('.accordion-item');
+            const content = item.querySelector('.accordion-content');
+            
+            const is_open = content.style.display === 'block';
+            
+            // Close all other accordions
+            document.querySelectorAll('.accordion-content').forEach(c => {
+                const parentItem = c.closest('.accordion-item');
+                if (c !== content) {
+                    // Use a temporary class to quickly hide for performance/simplicity
+                    c.style.display = 'none'; 
+                    if (parentItem) {
+                        parentItem.classList.remove('open');
+                    }
+                }
+            });
+
+            // Toggle the clicked item
+            if (is_open) {
+                content.style.display = 'none';
+                item.classList.remove('open');
+            } else {
+                content.style.display = 'block';
+                item.classList.add('open');
+            }
+        }
+    </script>
+</body>
+</html>

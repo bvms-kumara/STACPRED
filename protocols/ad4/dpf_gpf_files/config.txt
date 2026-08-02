@@ -1,0 +1,4 @@
+REC
+spacing    0.375
+npts       90 90 90
+center    65.623 29.982 43.044

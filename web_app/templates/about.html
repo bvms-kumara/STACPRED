@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STACPRED - About the Project</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    @keyframes gradient-shift {
+        0% { background-position: 0% 0%; }
+        50% { background-position: 100% 100%; }
+        100% { background-position: 0% 0%; }
+    }
+    @keyframes subtle-glow {
+        0%, 100% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05); }
+        50% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(74, 144, 226, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.08); }
+    }
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #0d1117;
+        color: #c9d1d9;
+        min-height: 100vh;
+        background-image: radial-gradient(at 0% 0%, #1a2a47 0px, transparent 40%), radial-gradient(at 100% 100%, #301747 0px, transparent 40%);
+        background-size: 150% 150%;
+        background-attachment: fixed;
+        animation: gradient-shift 30s ease infinite;
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+    }
+    .page-card { max-width: 1400px; width: 95%; margin: auto; }
+    .glass-panel {
+        background-color: rgba(13, 17, 23, 0.7);
+        border: 1px solid rgba(48, 54, 61, 0.5);
+        backdrop-filter: blur(12px);
+        border-radius: 16px;
+        animation: subtle-glow 8s ease-in-out infinite;
+    }
+    code {
+        font-family: 'Space Mono', monospace;
+        background-color: #161b22;
+        color: #4a90e2;
+        padding: 2px 4px;
+        border-radius: 4px;
+    }
+    .drop-zone { border: 3px dashed #30363d; transition: all 0.3s ease; }
+    .drop-zone:hover, .drop-zone-active { border-color: #58a6ff; background-color: rgba(88, 166, 255, 0.08); }
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.5); }
+        50% { box-shadow: 0 0 10px 6px rgba(88, 166, 255, 0.9); }
+    }
+    .active-pulse { animation: pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .warning-red-glow { box-shadow: 0 0 25px rgba(255, 60, 60, 0.8) !important; border-color: #ff3c3c !important; }
+    .shimmer-button { position: relative; overflow: hidden; }
+    .shimmer-button::after {
+        content: ''; position: absolute; top: 0; transform: translateX(-100%) skewX(-30deg);
+        width: 50%; height: 100%; background: rgba(255, 255, 255, 0.15); transition: all 0.5s;
+    }
+    .shimmer-button:hover::after { transform: translateX(200%) skewX(-30deg); transition: all 0.5s; }
+    .model-xgb { background-color: #10b981; }
+    .model-mlp { background-color: #a855f7; }
+</style>
+</head>
+<body>
+    <div class="page-card space-y-12">
+
+        <header class="flex flex-col md:flex-row items-start md:items-center justify-between border-b-2 border-blue-500 pb-5 pt-3">
+            <div class="flex items-start mb-3 md:mb-0">
+                <div class="p-3 bg-blue-600 rounded-xl mr-4 shadow-xl">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <h1 class="text-4xl font-extrabold text-blue-400 tracking-tight">
+                    STACPRED <span class="text-white font-light">| About the Project</span>
+                </h1>
+            </div>
+            <nav class="flex flex-wrap gap-2 text-sm md:text-lg font-medium text-blue-400">
+                <a href="/" class="hover:text-blue-200">Console</a><span>/</span>
+                <a href="/learn_more.html" class="hover:text-blue-200">Learn More</a><span>/</span>
+                <a href="/developers.html" class="hover:text-blue-200">Developers</a><span>/</span>
+                <a href="/research.html" class="hover:text-blue-200">Research</a>
+            </nav>
+        </header>
+
+        <!-- PROJECT OVERVIEW -->
+        <div class="glass-panel p-10 space-y-8">
+            <h2 class="text-3xl font-extrabold border-b border-gray-700 pb-3 text-white">Project Overview: STACPRED v2.0.0</h2>
+            <p class="text-xl text-gray-300 leading-relaxed">
+                <strong class="text-blue-400">STACPRED</strong> (Stacked Affinity Prediction) is a computational tool for high-confidence prediction of binding affinity (<code>kCal/mol</code>) of small molecules targeting the allosteric Sirtuin-1 (SIRT1) activation site.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                <div class="space-y-4 p-6 bg-gray-800/50 rounded-xl border border-blue-600 shadow-lg">
+                    <h3 class="text-2xl font-bold text-blue-400 flex items-center"><i class="fas fa-layer-group mr-3"></i> Core Methodology</h3>
+                    <p class="text-md text-gray-400">
+                        The ensemble employs <strong>Stacked Generalization</strong> (8 base models: 4 XGBoost + 4 MLP) fused by a meta-learner (RidgeCV). This multi-layer consensus design reduces model bias and enhances robustness.
+                    </p>
+                    <p class="text-md font-mono text-green-400 pt-2 border-t border-gray-700">
+                        Final Stack Accuracy: R² = 0.9154 &nbsp;&nbsp;|&nbsp;&nbsp; RMSE = 0.3090
+                    </p>
+                </div>
+
+                <div class="space-y-4 p-6 bg-gray-800/50 rounded-xl border border-purple-600 shadow-lg">
+                    <h3 class="text-2xl font-bold text-purple-400 flex items-center"><i class="fas fa-code-branch mr-3"></i> Technical Stack</h3>
+                    <ul class="list-disc list-inside ml-4 text-md text-gray-400 space-y-2">
+                        <li>Python (Scikit-learn, XGBoost, TensorFlow/Keras)</li>
+                        <li>RDKit / OpenBabel feature generation</li>
+                        <li>Flask REST API backend</li>
+                        <li>Tailwind CSS frontend (Glassmorphism UI)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- MODEL PERFORMANCE TABLE -->
+            <div class="pt-8">
+                <h3 class="text-2xl font-bold text-green-400 flex items-center mb-4">
+                    <i class="fas fa-chart-line mr-3"></i> Final Stacked Consensus Score & Base Model Summary
+                </h3>
+                <div class="bg-gray-900/60 p-5 rounded-xl border border-green-600 shadow-lg overflow-x-auto">
+                    <pre class="text-sm font-mono text-gray-300 leading-relaxed">
+FINAL STACKED CONSENSUS SCORE 
+| 8-MODEL STACK TEST             R²: 0.9154          RMSE: 0.3090         |
+
+>> BASE MODEL WEIGHT & PERFORMANCE SUMMARY 
+
+| MODEL           | TEST R²  | CV RMSE      | WEIGHT       |
+| AD4_XGB         | 0.6910   | 0.5728       | 1.1769       |
+| DOCK6_XGB       | 0.4505   | 2.6942       | -0.0016      |
+| VINA_XGB        | 0.9080   | 0.1832       | -0.0042      |
+| VINARDO_XGB     | 0.6001   | 0.5022       | 0.0036       |
+| AD4_MLP         | 0.4815   | 0.7558       | -0.1364      |
+| DOCK6_MLP       | 0.3850   | 2.8349       | 0.0049       |
+| VINA_MLP        | 0.9057   | 0.1860       | -0.0134      |
+| VINARDO_MLP     | 0.6037   | 0.4928       | -0.0087      |
+
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- DISCLAIMER -->
+        <div class="glass-panel p-10 space-y-8">
+            <h2 class="text-3xl font-extrabold border-b border-gray-700 pb-3 text-white">Disclaimer & Project Info</h2>
+            <div class="bg-yellow-900/30 p-5 rounded-xl border-l-4 border-yellow-500 shadow-md">
+                <p class="text-lg font-bold text-yellow-400 flex items-center"><i class="fas fa-exclamation-triangle mr-3"></i> Disclaimer</p>
+                <p class="text-md text-gray-300 mt-2">
+                    All predictions are computational and require experimental validation. This tool is for <strong>academic research only</strong> and not a substitute for laboratory or clinical evaluation.
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-md text-gray-400 pt-4">
+                <div>
+                    <strong class="text-white text-lg block mb-1">Project Lead</strong>
+                    <p>Malaka Sandaruwan</p>
+                    <a href="mailto:malakasandaruwan201023@gmail.com" class="text-blue-400 hover:text-blue-200"><code class="text-sm">malakasandaruwan201023@gmail.com</code></a>
+                </div>
+                <div>
+                    <strong class="text-white text-lg block mb-1">Model Version</strong>
+                    <p class="text-green-400 font-bold">v2.0.0 (Stable)</p>
+                    <p>Data Freeze: 2024-09-15</p>
+                </div>
+                <div>
+                    <strong class="text-white text-lg block mb-1">Source Code</strong>
+                    <p>Private Repository</p>
+                    <p>License: MIT (Academic Use Only)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

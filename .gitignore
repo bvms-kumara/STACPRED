@@ -1,14 +1,26 @@
+# Python
 __pycache__/
-*.pyc
-*.pkl
-*.log
-*.tmp
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
 
-# Large docking files
+# Data & Large Files
+*.mol2
+*.pdbqt
 *.dlg
-*.map
-*.fld
+*.log
+temp_uploads/*
+!web_app/temp_uploads/.gitkeep
 
-# OS
-.DS_Store
+# IDEs
+.vscode/
+.idea/
+
+# OS specific
 Thumbs.db
+Desktop.ini
+.DS_Store

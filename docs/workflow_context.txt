@@ -1,0 +1,3135 @@
+#################### START OF SECTION: 1LIGANDLIBRARYCURATION ####################
+# Overall_Summary
+Metric,Value,Unit
+TOTAL_PROCESSED,5338,Molecules
+TOTAL_REMOVED,1781,Molecules
+FINAL_PASSED,3557,Molecules
+SUCCESS_RATE,66.64,%
+TOTAL_TIME,16.01,Seconds
+PROCESSING_RATE,333.4,Mols/Second
+
+
+# Sequential_Filtering_Breakdown
+Step,Filter_Key,Parameters,Initial_Count,Removed_At_Step,Remaining_Kept,Drop_Percent_Of_Start
+1,PAINS,"No PAINS Substructure (RDKit Default)",5338,390,4948,7.31
+2,LIPINSKI,"MW<500, logP<5, HBD<5, HBA<10",4948,1245,3703,25.16
+3,VEBER,"RotBonds<10, TPSA<140",3703,146,3557,3.94
+4,SA,"SA_Score<6.0",3557,0,3557,0.00
+
+
+# Total_Removals_By_First_Failed_Rule
+Filter_Key,Parameters,Count_Removed,Percent_Of_Total_Initial
+PAINS,"No PAINS Substructure (RDKit Default)",390,7.31
+LIPINSKI,"MW<500, logP<5, HBD<5, HBA<10",1245,23.32
+VEBER,"RotBonds<10, TPSA<140",146,2.74
+SA,"SA_Score<6.0",0,0.00
+#################### END OF SECTION: 1LIGANDLIBRARYCURATION ####################
+
+
+#################### START OF SECTION: 2DOCKING ####################
+Docking done via 4 docking algorithms after curation of molecule library
+all 3557 docked via 4 engines 
+================================================================================
+ STACPRED: END-TO-END MACHINE LEARNING WORKFLOW CONTEXT
+================================================================================
+
+Document Generated: 2026-07-22 17:26:05
+Target Receptor: Human Sirtuin-1 (SIRT1) Allosteric NTD/ESA Site (PDB: 4ZZJ / 8K5Y)
+Platform: CUDA HPC Node (`foc-hpc-node-04`) | Environment: `mltrain311`
+
+
+SYSTEM OVERVIEW & METHODOLOGY:
+STACPRED is an 8-model parallel stacking ensemble framework for predicting binding free energy (ΔG / affinity)
+of small-molecule allosteric activators targeting SIRT1.
+
+Core Pipeline Stages:
+1. Feature Extraction: ~4,900-dimensional space per docking pose (2D Topological Fingerprints, RDKit 3D Descriptors,
+   LSalign shape overlap metrics against 4TQ reference, and raw docking energies).
+2. Docking Subspaces: AutoDock 4 (Electrostatics/Solvation), AutoDock Vina (Gaussian Steric/Hydrophobic),
+   Vinardo (De Novo Surface Interaction), DOCK6 (Grid/Contact Potentials).
+3. Representation Learning: Parallel training of Gradient Boosted Trees (XGBoost) and 5-Layer Deep Neural Networks (MLPs)
+   per docking engine space.
+4. Consensus Meta-Learning: RidgeCV L2-regularized meta-regressor (α = 2.0565) fusing 8 base predictions into
+   a final consensus affinity score (Validation R² = 0.9154).
+5. Deployment: GPU-accelerated Flask REST API with memory pre-loading and Out-of-Domain (OOD) molecular weight boundaries.
+
+
+================================================================================
+ 1. REPOSITORY DIRECTORY STRUCTURE
+================================================================================
+
+STACPRED_FINAL_PIPELINE/
+    build_full_context_file.py
+    05_validation_reports/
+        b2_vina_final_results_2_report_20251030_210258.txt
+        b2_ad4_final_results_2_report_20251030_203355.txt
+        b2_vinardo_final_results_2_report_20251030_212139.txt
+        b2_ad4_final_results_2_mlp_report_tuned_20251105_102923.txt
+        b2_vinardo_final_results_2_mlp_report_tuned_20251105_105005.txt
+        b2_dock6_final_results_2_report_20251030_203825.txt
+        b2_vina_final_results_2_mlp_report_tuned_20251105_104119.txt
+        b2_dock6_final_results_2_mlp_report_tuned_20251105_103346.txt
+    02_training_scripts/
+        mlp_train3.py
+        train_final_meta_mlp_xg.py
+        00_clean_data.py
+        train_4.py
+    04_meta_learner/
+        final_consensus_8model_stacking_model.pkl
+    00_feature_generation_scripts/
+        02_generate_dock6_features.py
+        04_generate_vinardo_features.py
+        03_generate_vina_features.py
+        01_generate_ad4_features.py
+    06_web_deployment/
+        4tq_reference.mol2
+        web/
+            research.html
+            login.html
+            developers.html
+            learn_more.html
+            about.html
+            index_cpy1.html
+            app.py
+            index.html
+            dev_photo_malaka.jpg
+            New Folder/
+                index (copy 3).html
+                developers (copy 1).html
+                index (copy 2).html
+                research (copy 1).html
+                sirt1_structure.gif
+                learn_more (copy 1).html
+                logo.png
+                index (copy 1).html
+                js/
+                    script.js
+                css/
+                    index.html
+                    style.css
+            temp_uploads/
+            New Folder 1/
+                index (copy 3).html
+                about (copy 1).html
+                research (copy 2).html
+                developers (copy 2).html
+                developers (copy 1).html
+                index (copy 2).html
+                research (copy 1).html
+                learn_more (copy 1).html
+                index (copy 1).html
+                about (copy 2).html
+    01_raw_datasets/
+        b2_vinardo_final_results_2_clean.csv
+        b2_vina_final_results_2_clean.csv
+        b2_ad4_final_results_2_clean.csv
+        b2_dock6_final_results_2_clean.csv
+    03_base_models/
+        xgb/
+            b2_dock6_final_results_2_model.pkl
+            b2_ad4_final_results_2_model.pkl
+            b2_vina_final_results_2_model.pkl
+            b2_vinardo_final_results_2_model.pkl
+        mlp/
+            b2_dock6_final_results_2_mlp_model_tuned.pkl
+            b2_vinardo_final_results_2_mlp_model_tuned.pkl
+            b2_vina_final_results_2_mlp_model_tuned.pkl
+            b2_ad4_final_results_2_mlp_model_tuned.pkl
+
+================================================================================
+ 2. TRAINED MODEL ARTIFACTS & INSPECTION AUDIT
+================================================================================
+
+* Model: 03_base_models/mlp/b2_ad4_final_results_2_mlp_model_tuned.pkl
+  Details: Class: Pipeline -> MLPRegressor | Disk Footprint: 30.14 MB | Topology: Input -> (256, 128, 64, 32) -> 1 | Activation: relu | Optimizer: adam
+
+* Model: 03_base_models/mlp/b2_dock6_final_results_2_mlp_model_tuned.pkl
+  Details: Class: Pipeline -> MLPRegressor | Disk Footprint: 29.49 MB | Topology: Input -> (256, 128, 64, 32) -> 1 | Activation: relu | Optimizer: adam
+
+* Model: 03_base_models/mlp/b2_vina_final_results_2_mlp_model_tuned.pkl
+  Details: Class: Pipeline -> MLPRegressor | Disk Footprint: 30.12 MB | Topology: Input -> (256, 128, 64, 32) -> 1 | Activation: relu | Optimizer: adam
+
+* Model: 03_base_models/mlp/b2_vinardo_final_results_2_mlp_model_tuned.pkl
+  Details: Class: Pipeline -> MLPRegressor | Disk Footprint: 30.11 MB | Topology: Input -> (256, 128, 64, 32) -> 1 | Activation: relu | Optimizer: adam
+
+* Model: 03_base_models/xgb/b2_ad4_final_results_2_model.pkl
+  Details: Class: Pipeline -> XGBRegressor | Disk Footprint: 56.19 MB | Trees (n_estimators): 8406 | Max Depth: 9 | Learning Rate: 0.008
+
+* Model: 03_base_models/xgb/b2_dock6_final_results_2_model.pkl
+  Details: Class: Pipeline -> XGBRegressor | Disk Footprint: 14.60 MB | Trees (n_estimators): 2588 | Max Depth: 9 | Learning Rate: 0.008
+
+* Model: 03_base_models/xgb/b2_vina_final_results_2_model.pkl
+  Details: Class: Pipeline -> XGBRegressor | Disk Footprint: 75.47 MB | Trees (n_estimators): 15499 | Max Depth: 9 | Learning Rate: 0.008
+
+* Model: 03_base_models/xgb/b2_vinardo_final_results_2_model.pkl
+  Details: Class: Pipeline -> XGBRegressor | Disk Footprint: 56.78 MB | Trees (n_estimators): 12150 | Max Depth: 9 | Learning Rate: 0.008
+
+* Model: 04_meta_learner/final_consensus_8model_stacking_model.pkl
+  Details: Class: RidgeCV | Disk Footprint: 0.00 MB | Trees (n_estimators): N/A | Max Depth: N/A | Learning Rate: N/A
+
+
+================================================================================
+ 3. VALIDATION REPORTS & TRAINING LOGS
+================================================================================
+
+
+------------------------------------------------------------
+ Log Output: 05_validation_reports/b2_ad4_final_results_2_mlp_report_tuned_20251105_102923.txt
+------------------------------------------------------------
+
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-11-05 10:29:23                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_ad4_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (28724, 2086)
+After Drop NA (Target only)        : (28724, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 20106.0000
+Validation                         : 4309.0000
+Test                               : 4309.0000
+
+----------------------------------------
+| MLP_CONFIGURATION |
+----------------------------------------
+Hidden Layers                      : (256, 128, 64, 32)
+Activation                         : relu
+Solver                             : adam
+Max Iterations                     : 3000.0000
+Learning Rate Init                 : 0.0008
+Alpha (L2)                         : 0.0010
+Tolerance (tol)                    : 0.0000
+Early Stopping                     : 1.0000
+Imputation Strategy (Numeric)      : median
+Imputation Strategy (Categorical)  : constant (missing)
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(0.7548675447414492), 0.576491146401682, 0.4982885317536917)
+Test RMSE/MAE/R2                   : (np.float64(0.7631160490123153), 0.5903848701977434, 0.4814502678809214)
+CV 5-fold RMSE                     : [0.7669, 0.7523, 0.7659, 0.7276, 0.7660]
+CV Mean RMSE                       : 0.7558
+CV Std RMSE                        : 0.0151
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_ad4_final_results_2_mlp_model_tuned.pkl
+
+
+
+------------------------------------------------------------
+ Log Output: 05_validation_reports/b2_ad4_final_results_2_report_20251030_203355.txt
+------------------------------------------------------------
+
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-10-30 20:33:55                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_ad4_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (28724, 2086)
+After Drop NA                      : (28724, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 20106.0000
+Validation                         : 4309.0000
+Test                               : 4309.0000
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(0.5810325633253027), 0.4392518408565738, 0.7027557469172523)
+Test RMSE/MAE/R2                   : (np.float64(0.5890865730470238), 0.4497537719547735, 0.6909935904619564)
+CV 5-fold RMSE                     : [0.5701, 0.5711, 0.5817, 0.5606, 0.5804]
+CV Mean RMSE                       : 0.5728
+CV Std RMSE                        : 0.0077
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_ad4_final_results_2_model.pkl
+
+
+
+------------------------------------------------------------
+ Log Output: 05_validation_reports/b2_dock6_final_results_2_mlp_report_tuned_20251105_103346.txt
+------------------------------------------------------------
+
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-11-05 10:33:46                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_dock6_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (21598, 2086)
+After Drop NA (Target only)        : (21598, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 15118.0000
+Validation                         : 3240.0000
+Test                               : 3240.0000
+
+----------------------------------------
+| MLP_CONFIGURATION |
+----------------------------------------
+Hidden Layers                      : (256, 128, 64, 32)
+Activation                         : relu
+Solver                             : adam
+Max Iterations                     : 3000.0000
+Learning Rate Init                 : 0.0008
+Alpha (L2)                         : 0.0010
+Tolerance (tol)                    : 0.0000
+Early Stopping                     : 1.0000
+Imputation Strategy (Numeric)      : median
+Imputation Strategy (Categorical)  : constant (missing)
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(2.636808731216646), 1.917172939224818, 0.348951040315873)
+Test RMSE/MAE/R2                   : (np.float64(2.612659781433768), 1.9290974086471313, 0.38501201677555597)
+CV 5-fold RMSE                     : [2.6172, 2.7773, 2.6632, 3.3134, 2.8033]
+CV Mean RMSE                       : 2.8349
+CV Std RMSE                        : 0.2491
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_dock6_final_results_2_mlp_model_tuned.pkl
+
+
+
+------------------------------------------------------------
+ Log Output: 05_validation_reports/b2_dock6_final_results_2_report_20251030_203825.txt
+------------------------------------------------------------
+
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-10-30 20:38:25                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_dock6_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (21598, 2086)
+After Drop NA                      : (21598, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 15118.0000
+Validation                         : 3240.0000
+Test                               : 3240.0000
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(2.4060322667703535), 1.7150503649092306, 0.4579251133893073)
+Test RMSE/MAE/R2                   : (np.float64(2.4696697606041735), 1.7588516231084752, 0.4504861052634027)
+CV 5-fold RMSE                     : [2.4088, 2.5921, 2.6544, 3.1570, 2.6589]
+CV Mean RMSE                       : 2.6942
+CV Std RMSE                        : 0.2485
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_dock6_final_results_2_model.pkl
+
+
+
+------------------------------------------------------------
+ Log Output: 05_validation_reports/b2_vina_final_results_2_mlp_report_tuned_20251105_104119.txt
+------------------------------------------------------------
+
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-11-05 10:41:19                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_vina_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (25843, 2086)
+After Drop NA (Target only)        : (25843, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 18089.0000
+Validation                         : 3877.0000
+Test                               : 3877.0000
+
+----------------------------------------
+| MLP_CONFIGURATION |
+----------------------------------------
+Hidden Layers                      : (256, 128, 64, 32)
+Activation                         : relu
+Solver                             : adam
+Max Iterations                     : 3000.0000
+Learning Rate Init                 : 0.0008
+Alpha (L2)                         : 0.0010
+Tolerance (tol)                    : 0.0000
+Early Stopping                     : 1.0000
+Imputation Strategy (Numeric)      : median
+Imputation Strategy (Categorical)  : constant (missing)
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(0.1924475451935905), 0.14558733059740508, 0.8997785889956527)
+Test RMSE/MAE/R2                   : (np.float64(0.18483061948767274), 0.1424648811745986, 0.9057368833776717)
+CV 5-fold RMSE                     : [0.1870, 0.1867, 0.1870, 0.1828, 0.1866]
+CV Mean RMSE                       : 0.1860
+CV Std RMSE                        : 0.0016
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_vina_final_results_2_mlp_model_tuned.pkl
+
+
+
+------------------------------------------------------------
+ Log Output: 05_validation_reports/b2_vina_final_results_2_report_20251030_210258.txt
+------------------------------------------------------------
+
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-10-30 21:02:58                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_vina_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (25843, 2086)
+After Drop NA                      : (25843, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 18089.0000
+Validation                         : 3877.0000
+Test                               : 3877.0000
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(0.18340121429320252), 0.13843416240309392, 0.9089792992028587)
+Test RMSE/MAE/R2                   : (np.float64(0.18264478479161075), 0.1398238766891365, 0.9079532395225272)
+CV 5-fold RMSE                     : [0.1846, 0.1860, 0.1820, 0.1800, 0.1836]
+CV Mean RMSE                       : 0.1832
+CV Std RMSE                        : 0.0021
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_vina_final_results_2_model.pkl
+
+
+
+------------------------------------------------------------
+ Log Output: 05_validation_reports/b2_vinardo_final_results_2_mlp_report_tuned_20251105_105005.txt
+------------------------------------------------------------
+
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-11-05 10:50:05                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_vinardo_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (25808, 2086)
+After Drop NA (Target only)        : (25808, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 18064.0000
+Validation                         : 3872.0000
+Test                               : 3872.0000
+
+----------------------------------------
+| MLP_CONFIGURATION |
+----------------------------------------
+Hidden Layers                      : (256, 128, 64, 32)
+Activation                         : relu
+Solver                             : adam
+Max Iterations                     : 3000.0000
+Learning Rate Init                 : 0.0008
+Alpha (L2)                         : 0.0010
+Tolerance (tol)                    : 0.0000
+Early Stopping                     : 1.0000
+Imputation Strategy (Numeric)      : median
+Imputation Strategy (Categorical)  : constant (missing)
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(0.4963037559393606), 0.34310739468044216, 0.5828760335242837)
+Test RMSE/MAE/R2                   : (np.float64(0.4884644931711114), 0.34299163195253807, 0.6037062118772517)
+CV 5-fold RMSE                     : [0.4991, 0.4950, 0.5077, 0.4519, 0.5103]
+CV Mean RMSE                       : 0.4928
+CV Std RMSE                        : 0.0212
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_vinardo_final_results_2_mlp_model_tuned.pkl
+
+
+
+------------------------------------------------------------
+ Log Output: 05_validation_reports/b2_vinardo_final_results_2_report_20251030_212139.txt
+------------------------------------------------------------
+
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-10-30 21:21:39                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_vinardo_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (25808, 2086)
+After Drop NA                      : (25808, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 18064.0000
+Validation                         : 3872.0000
+Test                               : 3872.0000
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(0.4955673002881607), 0.33671578490512427, 0.5841130396099941)
+Test RMSE/MAE/R2                   : (np.float64(0.4907019430109128), 0.33600102614568284, 0.6000673875374847)
+CV 5-fold RMSE                     : [0.4985, 0.4915, 0.5303, 0.4729, 0.5178]
+CV Mean RMSE                       : 0.5022
+CV Std RMSE                        : 0.0201
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_vinardo_final_results_2_model.pkl
+
+
+
+================================================================================
+ 4. FULL PIPELINE SOURCE CODE & SCRIPTS
+================================================================================
+
+
+------------------------------------------------------------
+ Script: 00_feature_generation_scripts/01_generate_ad4_features.py
+------------------------------------------------------------
+
+```python
+#!/usr/bin/env python3
+import os
+import subprocess
+import pandas as pd
+import numpy as np
+import re
+import sys
+import tempfile
+import multiprocessing
+from rdkit import RDLogger
+from tqdm import tqdm
+
+# RDKit Imports
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors, Descriptors3D, AllChem, MACCSkeys
+    from rdkit.Chem.rdmolops import GetFormalCharge
+    from rdkit.DataStructs import TanimotoSimilarity
+    from rdkit.Chem import rdFMCS, inchi
+except ImportError:
+    print("FATAL ERROR: RDKit is not installed. Please install RDKit to run this script.")
+    sys.exit(1)
+
+# ======================================================================
+# --- SUPPRESS RDKIT MESSAGES (CRITICAL FIX) ---
+RDLogger.DisableLog('rdApp.*')
+# ======================================================================
+
+# ======================================================================
+# --- CONFIGURATION ---
+# ======================================================================
+MOL2_DIR = "/home/kumara/malakafahs/dock/allosteric/ad4_gpu_dock_2/poses_mol2"
+LOG_DIR = "/home/kumara/malakafahs/dock/allosteric/ad4_gpu_dock_2/pose_logs"
+LSALIGN_EXE = "./LSalign"
+REFERENCE_MOL2 = "4tq_reference.mol2"
+OUTPUT_CSV = "b2_ad4_final_results_2.csv"
+NUM_CORES = 16
+MOLECULE_LIMIT = 0
+FP_BITS = 2048
+FP_RADIUS = 2
+
+if not hasattr(np, "float"):
+    np.float = float
+
+core_2d = [
+    "MolWt", "MolLogP", "TPSA",
+    ("NumHDonors", "HBD"), ("NumHAcceptors", "HBA"),
+    ("NumRotatableBonds", "RotBonds"),
+    "HeavyAtomCount", "FractionCSP3",
+    ("NumAromaticRings", "AromaticRings"),
+    "FormalCharge"
+]
+
+core_3d = [
+    "Asphericity", "Eccentricity", "RadiusOfGyration", "SpherocityIndex",
+    "InertialShapeFactor", "PMI1", "PMI2", "PMI3", "NPR1", "NPR2"
+]
+
+FINAL_ORDER_BASE = [
+    "Full_Name", "Canonical_SMILES", "Standard_InChIKey", "Docking_Algorithm", "Binding_Energy",
+    "tan_morgan", "macs", "mcs_fraction", "rmsd", "com_distance",
+    "MolWt", "MolLogP", "TPSA", "HBD", "HBA", "RotBonds", "AromaticRings", "FormalCharge",
+    "HeavyAtomCount", "FractionCSP3",
+    "Asphericity", "Eccentricity", "RadiusOfGyration", "SpherocityIndex",
+    "InertialShapeFactor", "PMI1", "PMI2", "PMI3", "NPR1", "NPR2",
+    "PC_scoreQ", "PC_scoreT", "Pval_PC8Q", "Pval_PC8T", "JaccardR", "QUERY_SIZE", "TEMPL_SIZE",
+    "LSalign_Error" 
+]
+
+# ----------------------------------------------------------------------
+# --- Utility Functions ---
+# ----------------------------------------------------------------------
+
+def repair_mol_for_sanitization(mol):
+    if mol is None:
+        return None
+    flexible_flags = (
+        Chem.SanitizeFlags.SANITIZE_ALL &
+        ~Chem.SanitizeFlags.SANITIZE_KEKULIZE &
+        ~Chem.SanitizeFlags.SANITIZE_SETVALENCES
+    )
+    try:
+        Chem.SanitizeMol(mol, catchErrors=True)
+        return mol
+    except Exception:
+        pass
+    try:
+        Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+        Chem.SanitizeMol(mol, sanitizeOps=flexible_flags, catchErrors=True)
+        mol.UpdatePropertyCache(strict=False)
+        return mol
+    except Exception:
+        return None
+
+
+def calculate_robust_distance(mol_pose, mol_ref):
+    """Calculates CoM/CoG distance using RDKit's conformer data."""
+    if mol_pose is None or mol_ref is None or mol_pose.GetNumConformers() == 0 or mol_ref.GetNumConformers() == 0:
+        return None
+    try:
+        conf1 = mol_pose.GetConformer(0)
+        conf2 = mol_ref.GetConformer(0)
+        com1 = AllChem.ComputeCenterOfMass(mol_pose, conf1)
+        com2 = AllChem.ComputeCenterOfMass(mol_ref, conf2)
+        return float(np.linalg.norm(np.array(com1) - np.array(com2)))
+    except Exception:
+        pass
+    try:
+        pos1 = mol_pose.GetConformer(0).GetPositions()
+        pos2 = mol_ref.GetConformer(0).GetPositions()
+        cog1 = np.mean(pos1, axis=0)
+        cog2 = np.mean(pos2, axis=0)
+        return float(np.linalg.norm(cog1 - cog2))
+    except Exception:
+        pass
+    return None
+
+
+def calculate_com_distance_from_mol2(mol2_file, ref_mol):
+    """Backup method: compute COM distance directly from raw mol2 file atoms."""
+    try:
+        with open(mol2_file, 'r') as f:
+            lines = f.readlines()
+        atom_coords = []
+        in_atom_section = False
+        for line in lines:
+            if line.startswith("@<TRIPOS>ATOM"):
+                in_atom_section = True
+                continue
+            if line.startswith("@<TRIPOS>BOND"):
+                break
+            if in_atom_section:
+                parts = line.split()
+                if len(parts) >= 6:
+                    x, y, z = map(float, parts[2:5])
+                    atom_coords.append([x, y, z])
+        if not atom_coords:
+            return None
+        
+        ligand_center = np.mean(np.array(atom_coords), axis=0)
+        ref_conf = ref_mol.GetConformer(0)
+        ref_positions = np.array(ref_conf.GetPositions())
+        ref_center = np.mean(ref_positions, axis=0)
+        
+        return float(np.linalg.norm(ligand_center - ref_center))
+    except Exception:
+        return None
+
+
+def extract_docking_algorithm(file_name):
+    match = re.search(r'_(dock6|vina|vinardo|ad4)(?:_|\.)', file_name, re.IGNORECASE)
+    return match.group(1).lower() if match else 'unknown'
+
+
+def run_lsalign_and_parse(ligand_mol2, reference_mol2, lsalign_exe):
+    # Initialize with None and an error message holder
+    rmsd_row = {k: None for k in ["PC_scoreQ", "PC_scoreT", "Pval_PC8Q", "Pval_PC8T",
+                                 "JaccardR", "rmsd", "QUERY_SIZE", "TEMPL_SIZE", "LSalign_Error"]}
+    
+    cmd = [lsalign_exe, ligand_mol2, reference_mol2, "-H", "1"]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
+        stdout_output = result.stdout
+        
+        if result.returncode != 0 and "QUERY_NAME" not in stdout_output and "QEURY_NAME" not in stdout_output:
+            rmsd_row["LSalign_Error"] = f"LSalign exited with code {result.returncode}. Stderr: {result.stderr.strip()}"
+            return rmsd_row
+            
+        data_line = None
+        
+        # --- NEW ROBUST REGEX SEARCH FOR DATA LINE ---
+        # The data line starts with a filename (e.g., ZINC05999146_pose6_ad4_b2.mol2, or truncated '999146_pose6.pdbqt')
+        # followed by one or more spaces, followed by ***** or another filename,
+        # followed by the first number (PC-score8Q).
+        
+        # Pattern for the data: [Filename/ID] [Filename/*****] [Number] [Number] ...
+        # Ligand file name pattern (handles truncation/change by LSalign): starts with a digit or letter
+        # followed by ***** or another string, followed by the first float.
+        # This regex looks for a non-empty line that has at least 5 float-like numbers
+        # (PC-scoreQ, PC-scoreT, Pval_PC8Q, Pval_PC8T, JaccardR, RMSD_lb)
+        # Note: We are now searching the ENTIRE output for the pattern, which is more robust than line indexing.
+        
+        # Pattern to find a line starting with an ID/filename, followed by a non-numeric string, 
+        # and then followed by at least two float values separated by whitespace.
+        # This targets the line: 999146_pose6.pdbqt ***** 0.4914 ...
+        
+        # The first part captures the ID, the second captures the template name/placeholder, 
+        # and the rest captures the numeric data.
+        regex_pattern = re.compile(
+            r'^\s*([a-zA-Z0-9_\.]+)\s+([\*a-zA-Z0-9_\.]+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+(\d+)\s+(\d+)\s*$', 
+            re.MULTILINE
+        )
+        
+        match = regex_pattern.search(stdout_output)
+
+        if match:
+            # The groups are: (ID1, ID2, PCQ, PCT, PvalQ, PvalT, JaccardR, RMSD, QSize, TSize)
+            data_parts = match.groups()
+            
+            # The data we want starts at index 2 (PC-score8Q)
+            if len(data_parts) >= 10:
+                try:
+                    rmsd_row["PC_scoreQ"] = float(data_parts[2])
+                    rmsd_row["PC_scoreT"] = float(data_parts[3])
+                    rmsd_row["Pval_PC8Q"] = float(data_parts[4])
+                    rmsd_row["Pval_PC8T"] = float(data_parts[5])
+                    rmsd_row["JaccardR"] = float(data_parts[6])
+                    rmsd_row["rmsd"] = float(data_parts[7])
+                    rmsd_row["QUERY_SIZE"] = int(data_parts[8])
+                    rmsd_row["TEMPL_SIZE"] = int(data_parts[9])
+                    rmsd_row["LSalign_Error"] = None # Success
+                except ValueError as e:
+                    rmsd_row["LSalign_Error"] = f"Error converting LSalign output to float/int. Captured data: {data_parts}. Error: {e}"
+            else:
+                rmsd_row["LSalign_Error"] = f"Regex captured insufficient columns ({len(data_parts)})."
+        else:
+            rmsd_row["LSalign_Error"] = "Could not find LSalign summary data line using robust regex search. Output may be malformed."
+            
+    except subprocess.TimeoutExpired:
+        rmsd_row["LSalign_Error"] = "LSalign command timed out (60 seconds)."
+    except Exception as e:
+        rmsd_row["LSalign_Error"] = f"Unexpected error during LSalign execution: {e}"
+        
+    return rmsd_row
+
+
+def find_file_groups(mol2_dir, log_dir):
+    mol2_files = {re.sub(r'\.mol2$', '', f): f for f in os.listdir(mol2_dir) if f.endswith('.mol2')}
+    log_files = {re.sub(r'\.(log|txt)$', '', f): f for f in os.listdir(log_dir) if f.endswith(('.log', '.txt'))}
+    return {base: {'mol2': os.path.join(mol2_dir, mol2_files[base]),
+                   'log': os.path.join(log_dir, log_files[base])}
+            for base in mol2_files if base in log_files}
+
+
+def generate_ecfp_from_mol(mol, fp_bits, fp_radius):
+    if mol is None:
+        return pd.Series([0] * fp_bits, index=[f'ECFP_{i}' for i in range(fp_bits)])
+    try:
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=fp_radius, nBits=fp_bits)
+        return pd.Series(list(map(int, list(fp.ToBitString()))), index=[f'ECFP_{i}' for i in range(fp_bits)])
+    except Exception:
+        return pd.Series([0] * fp_bits, index=[f'ECFP_{i}' for i in range(fp_bits)])
+
+
+def extract_binding_energy(log_path):
+    try:
+        with open(log_path, 'r') as f:
+            content = f.read().strip()
+        match = re.search(r'[-+]?\d*\.\d+|\d+', content)
+        return float(match.group(0)) if match else None
+    except Exception:
+        return None
+
+# ----------------------------------------------------------------------
+# --- Worker Function ---
+# ----------------------------------------------------------------------
+
+def worker_process_molecule(args):
+    base_name, files, REFERENCE_MOL2_PATH, LSALIGN_EXE, FP_BITS, FP_RADIUS = args
+
+    # Load reference molecule
+    ref_mol = None
+    try:
+        ref_mol = Chem.MolFromMol2File(REFERENCE_MOL2_PATH, removeHs=False, sanitize=False)
+        if not ref_mol:
+            return None
+        Chem.AssignStereochemistry(ref_mol, cleanIt=True, force=True)
+        if ref_mol.GetNumConformers() == 0:
+            AllChem.EmbedMolecule(ref_mol, AllChem.ETKDG())
+    except Exception:
+        return None
+
+    ligand_mol2 = files['mol2']
+    log_file = files['log']
+    mol_3d = None
+    rdkit_success = False
+
+    # Load and sanitize ligand molecule
+    try:
+        mol_3d = Chem.MolFromMol2File(ligand_mol2, removeHs=False, sanitize=True)
+        if not mol_3d:
+            mol_unsanitized = Chem.MolFromMol2File(ligand_mol2, removeHs=False, sanitize=False)
+            mol_3d = repair_mol_for_sanitization(mol_unsanitized)
+        if mol_3d and mol_3d.GetNumConformers() > 0:
+            rdkit_success = True
+    except Exception:
+        mol_3d = None
+
+    # Compute COM distance (RDKit method + fallback to raw mol2)
+    com_distance = calculate_robust_distance(mol_3d, ref_mol)
+    
+    com_fallback_used = False
+    if com_distance is None:
+        com_distance = calculate_com_distance_from_mol2(ligand_mol2, ref_mol)
+        if com_distance is not None:
+             com_fallback_used = True
+
+    # Prepare result row
+    row = {"Full_Name": base_name, "Docking_Algorithm": extract_docking_algorithm(base_name),
+           "Binding_Energy": extract_binding_energy(log_file), "com_distance": com_distance}
+    
+    # Initialize RDKit error message
+    lsalign_error_message = None
+    if com_fallback_used:
+        lsalign_error_message = "RDKit MolFromMol2File failed, used raw mol2 fallback for CoM distance."
+    elif not rdkit_success:
+         lsalign_error_message = "RDKit MolFromMol2File failed, descriptors/similarity skipped."
+
+    # Process RDKit-dependent properties only if mol_3d load/sanitize was successful
+    if rdkit_success:
+        try:
+            row["Canonical_SMILES"] = Chem.MolToSmiles(mol_3d, isomericSmiles=True)
+            row["Standard_InChIKey"] = inchi.MolToInchiKey(mol_3d)
+        except Exception:
+            row["Canonical_SMILES"], row["Standard_InChIKey"] = None, None
+
+        for d_name in core_2d:
+            func_name, col_name = (d_name if isinstance(d_name, tuple) else (d_name, d_name))
+            try:
+                row[col_name] = GetFormalCharge(mol_3d) if col_name == "FormalCharge" else getattr(Descriptors, func_name)(mol_3d)
+            except Exception:
+                row[col_name] = None
+        
+        for d in core_3d:
+            try:
+                row[d] = getattr(Descriptors3D, d)(mol_3d)
+            except Exception:
+                row[d] = None
+
+        try:
+            fp_macs = MACCSkeys.GenMACCSKeys(mol_3d)
+            row["macs"] = fp_macs.GetNumOnBits()
+        except Exception:
+            row["macs"] = None
+
+        try:
+            fp_mol = AllChem.GetMorganFingerprint(mol_3d, 2)
+            fp_ref = AllChem.GetMorganFingerprint(ref_mol, 2)
+            row["tan_morgan"] = TanimotoSimilarity(fp_mol, fp_ref)
+        except Exception:
+            row["tan_morgan"] = None
+
+        try:
+            mcs_result = rdFMCS.FindMCS([mol_3d, ref_mol])
+            mcs_mol = Chem.MolFromSmarts(mcs_result.smartsString)
+            row["mcs_fraction"] = (2 * mcs_mol.GetNumHeavyAtoms()) / (mol_3d.GetNumHeavyAtoms() + ref_mol.GetNumHeavyAtoms())
+        except Exception:
+            row["mcs_fraction"] = None
+    else:
+         # Populate RDKit-dependent fields with None if RDKit failed
+        for col in ["Canonical_SMILES", "Standard_InChIKey", "macs", "tan_morgan", "mcs_fraction"] + [c[1] if isinstance(c, tuple) else c for c in core_2d] + core_3d:
+             if col not in row:
+                 row[col] = None
+                 
+    # Run LSalign and update the row
+    lsalign_results = run_lsalign_and_parse(ligand_mol2, REFERENCE_MOL2_PATH, LSALIGN_EXE)
+    
+    # Update the row with LSalign results (including the 'rmsd' column)
+    row.update(lsalign_results)
+    
+    # Finalize the error message, prioritizing LSalign's error over RDKit's
+    if row["LSalign_Error"] is None:
+        row["LSalign_Error"] = lsalign_error_message
+
+    fp_series = generate_ecfp_from_mol(mol_3d, FP_BITS, FP_RADIUS)
+    row.update(fp_series.to_dict())
+
+    return row
+
+# ----------------------------------------------------------------------
+# --- Main Function ---
+# ----------------------------------------------------------------------
+
+def process_data_and_save(mol2_dir, log_dir, lsalign_exe, reference_mol2, output_csv, limit):
+    if not os.path.exists(reference_mol2):
+        print(f"FATAL: Reference molecule not found: {reference_mol2}")
+        sys.exit(1)
+
+    file_groups_all = find_file_groups(mol2_dir, log_dir)
+    file_groups = dict(list(file_groups_all.items())[:limit]) if limit > 0 else file_groups_all
+    total_molecules = len(file_groups)
+    print(f"Found {total_molecules} molecules.")
+
+    ecfp_cols = [f'ECFP_{i}' for i in range(FP_BITS)]
+    final_cols = FINAL_ORDER_BASE + ecfp_cols
+    
+    # Write the header
+    pd.DataFrame(columns=final_cols).to_csv(output_csv, index=False, header=True, mode='w')
+
+    tasks = [(bn, f, reference_mol2, lsalign_exe, FP_BITS, FP_RADIUS) for bn, f in file_groups.items()]
+    processed = 0
+    with multiprocessing.Pool(processes=NUM_CORES) as pool:
+        for result in tqdm(pool.imap_unordered(worker_process_molecule, tasks), total=total_molecules, desc="Processing"):
+            if result:
+                # Append data row, ensuring correct column order
+                pd.DataFrame([result], columns=final_cols).to_csv(output_csv, index=False, header=False, mode='a')
+                processed += 1
+    print(f"✅ Finished. {processed} molecules processed.")
+
+
+if __name__ == "__main__":
+    try:
+        subprocess.run([LSALIGN_EXE, "-h"], capture_output=True, check=True)
+    except FileNotFoundError:
+        print(f"FATAL ERROR: LSalign not found at {LSALIGN_EXE}")
+        sys.exit(1)
+    except subprocess.CalledProcessError:
+         pass
+    except Exception as e:
+        print(f"FATAL ERROR checking LSalign: {e}")
+        sys.exit(1)
+        
+    process_data_and_save(MOL2_DIR, LOG_DIR, LSALIGN_EXE, REFERENCE_MOL2, OUTPUT_CSV, MOLECULE_LIMIT)
+
+```
+
+
+------------------------------------------------------------
+ Script: 00_feature_generation_scripts/02_generate_dock6_features.py
+------------------------------------------------------------
+
+```python
+#!/usr/bin/env python3
+import os
+import subprocess
+import pandas as pd
+import numpy as np
+import re
+import sys
+import tempfile
+import multiprocessing
+from rdkit import RDLogger
+from tqdm import tqdm
+
+# RDKit Imports
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors, Descriptors3D, AllChem, MACCSkeys
+    from rdkit.Chem.rdmolops import GetFormalCharge
+    from rdkit.DataStructs import TanimotoSimilarity
+    from rdkit.Chem import rdFMCS, inchi
+except ImportError:
+    print("FATAL ERROR: RDKit is not installed. Please install RDKit to run this script.")
+    sys.exit(1)
+
+# ======================================================================
+# --- SUPPRESS RDKIT MESSAGES (CRITICAL FIX) ---
+RDLogger.DisableLog('rdApp.*')
+# ======================================================================
+
+# ======================================================================
+# --- CONFIGURATION (ADJUSTED FOR DOCK 6) ---
+# ======================================================================
+MOL2_DIR = "/home/kumara/malakafahs/dock/allosteric/dock6/separated_mol2"
+LOG_DIR = "/home/kumara/malakafahs/dock/allosteric/dock6/separated_logs"
+LSALIGN_EXE = "./LSalign"
+REFERENCE_MOL2 = "4tq_reference.mol2"
+OUTPUT_CSV = "b2_dock6_final_results_2.csv"
+NUM_CORES = 16
+MOLECULE_LIMIT = 0
+FP_BITS = 2048
+FP_RADIUS = 2
+
+if not hasattr(np, "float"):
+    np.float = float
+
+core_2d = [
+    "MolWt", "MolLogP", "TPSA",
+    ("NumHDonors", "HBD"), ("NumHAcceptors", "HBA"),
+    ("NumRotatableBonds", "RotBonds"),
+    "HeavyAtomCount", "FractionCSP3",
+    ("NumAromaticRings", "AromaticRings"),
+    "FormalCharge"
+]
+
+core_3d = [
+    "Asphericity", "Eccentricity", "RadiusOfGyration", "SpherocityIndex",
+    "InertialShapeFactor", "PMI1", "PMI2", "PMI3", "NPR1", "NPR2"
+]
+
+FINAL_ORDER_BASE = [
+    "Full_Name", "Canonical_SMILES", "Standard_InChIKey", "Docking_Algorithm", "Binding_Energy",
+    "tan_morgan", "macs", "mcs_fraction", "rmsd", "com_distance",
+    "MolWt", "MolLogP", "TPSA", "HBD", "HBA", "RotBonds", "AromaticRings", "FormalCharge",
+    "HeavyAtomCount", "FractionCSP3",
+    "Asphericity", "Eccentricity", "RadiusOfGyration", "SpherocityIndex",
+    "InertialShapeFactor", "PMI1", "PMI2", "PMI3", "NPR1", "NPR2",
+    "PC_scoreQ", "PC_scoreT", "Pval_PC8Q", "Pval_PC8T", "JaccardR", "QUERY_SIZE", "TEMPL_SIZE",
+    "LSalign_Error" 
+]
+
+# ----------------------------------------------------------------------
+# --- Utility Functions ---
+# ----------------------------------------------------------------------
+
+def repair_mol_for_sanitization(mol):
+    if mol is None:
+        return None
+    flexible_flags = (
+        Chem.SanitizeFlags.SANITIZE_ALL &
+        ~Chem.SanitizeFlags.SANITIZE_KEKULIZE &
+        ~Chem.SanitizeFlags.SANITIZE_SETVALENCES
+    )
+    try:
+        Chem.SanitizeMol(mol, catchErrors=True)
+        return mol
+    except Exception:
+        pass
+    try:
+        Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+        Chem.SanitizeMol(mol, sanitizeOps=flexible_flags, catchErrors=True)
+        mol.UpdatePropertyCache(strict=False)
+        return mol
+    except Exception:
+        return None
+
+
+def calculate_robust_distance(mol_pose, mol_ref):
+    """Calculates CoM/CoG distance using RDKit's conformer data."""
+    if mol_pose is None or mol_ref is None or mol_pose.GetNumConformers() == 0 or mol_ref.GetNumConformers() == 0:
+        return None
+    try:
+        conf1 = mol_pose.GetConformer(0)
+        conf2 = mol_ref.GetConformer(0)
+        com1 = AllChem.ComputeCenterOfMass(mol_pose, conf1)
+        com2 = AllChem.ComputeCenterOfMass(mol_ref, conf2)
+        return float(np.linalg.norm(np.array(com1) - np.array(com2)))
+    except Exception:
+        pass
+    try:
+        pos1 = mol_pose.GetConformer(0).GetPositions()
+        pos2 = mol_ref.GetConformer(0).GetPositions()
+        cog1 = np.mean(pos1, axis=0)
+        cog2 = np.mean(pos2, axis=0)
+        return float(np.linalg.norm(cog1 - cog2))
+    except Exception:
+        pass
+    return None
+
+
+def calculate_com_distance_from_mol2(mol2_file, ref_mol):
+    """Backup method: compute COM distance directly from raw mol2 file atoms."""
+    try:
+        with open(mol2_file, 'r') as f:
+            lines = f.readlines()
+        atom_coords = []
+        in_atom_section = False
+        for line in lines:
+            if line.startswith("@<TRIPOS>ATOM"):
+                in_atom_section = True
+                continue
+            if line.startswith("@<TRIPOS>BOND"):
+                break
+            if in_atom_section:
+                parts = line.split()
+                if len(parts) >= 6:
+                    x, y, z = map(float, parts[2:5])
+                    atom_coords.append([x, y, z])
+        if not atom_coords:
+            return None
+        
+        ligand_center = np.mean(np.array(atom_coords), axis=0)
+        ref_conf = ref_mol.GetConformer(0)
+        ref_positions = np.array(ref_conf.GetPositions())
+        ref_center = np.mean(ref_positions, axis=0)
+        
+        return float(np.linalg.norm(ligand_center - ref_center))
+    except Exception:
+        return None
+
+
+def extract_docking_algorithm(file_name):
+    match = re.search(r'_(dock6|vina|vinardo|ad4)(?:_|\.)', file_name, re.IGNORECASE)
+    return match.group(1).lower() if match else 'unknown'
+
+
+def run_lsalign_and_parse(ligand_mol2, reference_mol2, lsalign_exe):
+    # Initialize with None and an error message holder
+    rmsd_row = {k: None for k in ["PC_scoreQ", "PC_scoreT", "Pval_PC8Q", "Pval_PC8T",
+                                 "JaccardR", "rmsd", "QUERY_SIZE", "TEMPL_SIZE", "LSalign_Error"]}
+    
+    cmd = [lsalign_exe, ligand_mol2, reference_mol2, "-H", "1"]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
+        stdout_output = result.stdout
+        
+        if result.returncode != 0 and "QUERY_NAME" not in stdout_output and "QEURY_NAME" not in stdout_output:
+            rmsd_row["LSalign_Error"] = f"LSalign exited with code {result.returncode}. Stderr: {result.stderr.strip()}"
+            return rmsd_row
+            
+        # --- CRITICAL FIX: Robust Regex to handle varying Filename/Path formats (e.g., 'p/ZINC...' or '999146...') ---
+        # The pattern captures the two ID columns (allowing for path characters like / and -) and the 8 numeric columns.
+        
+        # Regex explanation:
+        # ^\s* Start of line, followed by optional whitespace
+        # ([a-zA-Z0-9_/.\-]+)       Group 1 (Query ID): Filename/ID, allowing letters, numbers, _, ., /, and -
+        # \s+                       One or more spaces
+        # ([\*a-zA-Z0-9_/.\-]+)     Group 2 (Template ID): Similar ID pattern, including '*' for the common placeholder
+        # \s+([-]?\d+\.\d+)         Groups 3-8: The 6 floating-point values (PCQ, PCT, PvalQ, PvalT, JaccardR, RMSD)
+        # \s+(\d+)\s+(\d+)\s*$      Groups 9-10: The 2 integer values (QSize, TSize), ending with optional whitespace
+        
+        regex_pattern = re.compile(
+            r'^\s*([a-zA-Z0-9_/.\-]+)\s+([\*a-zA-Z0-9_/.\-]+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+(\d+)\s+(\d+)\s*$', 
+            re.MULTILINE
+        )
+        
+        match = regex_pattern.search(stdout_output)
+
+        if match:
+            # The groups are: (ID1, ID2, PCQ, PCT, PvalQ, PvalT, JaccardR, RMSD, QSize, TSize)
+            data_parts = match.groups()
+            
+            # The data we want starts at index 2 (PC-score8Q)
+            if len(data_parts) >= 10:
+                try:
+                    rmsd_row["PC_scoreQ"] = float(data_parts[2])
+                    rmsd_row["PC_scoreT"] = float(data_parts[3])
+                    rmsd_row["Pval_PC8Q"] = float(data_parts[4])
+                    rmsd_row["Pval_PC8T"] = float(data_parts[5])
+                    rmsd_row["JaccardR"] = float(data_parts[6])
+                    rmsd_row["rmsd"] = float(data_parts[7])
+                    rmsd_row["QUERY_SIZE"] = int(data_parts[8])
+                    rmsd_row["TEMPL_SIZE"] = int(data_parts[9])
+                    rmsd_row["LSalign_Error"] = None # Success
+                except ValueError as e:
+                    rmsd_row["LSalign_Error"] = f"Error converting LSalign output to float/int. Captured data: {data_parts}. Error: {e}"
+            else:
+                rmsd_row["LSalign_Error"] = f"Regex captured insufficient columns ({len(data_parts)})."
+        else:
+            rmsd_row["LSalign_Error"] = "Could not find LSalign summary data line using robust regex search."
+            
+    except subprocess.TimeoutExpired:
+        rmsd_row["LSalign_Error"] = "LSalign command timed out (60 seconds)."
+    except Exception as e:
+        rmsd_row["LSalign_Error"] = f"Unexpected error during LSalign execution: {e}"
+        
+    return rmsd_row
+
+
+def find_file_groups(mol2_dir, log_dir):
+    mol2_files = {re.sub(r'\.mol2$', '', f): f for f in os.listdir(mol2_dir) if f.endswith('.mol2')}
+    log_files = {re.sub(r'\.(log|txt)$', '', f): f for f in os.listdir(log_dir) if f.endswith(('.log', '.txt'))}
+    return {base: {'mol2': os.path.join(mol2_dir, mol2_files[base]),
+                   'log': os.path.join(log_dir, log_files[base])}
+            for base in mol2_files if base in log_files}
+
+
+def generate_ecfp_from_mol(mol, fp_bits, fp_radius):
+    if mol is None:
+        return pd.Series([0] * fp_bits, index=[f'ECFP_{i}' for i in range(fp_bits)])
+    try:
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=fp_radius, nBits=fp_bits)
+        return pd.Series(list(map(int, list(fp.ToBitString()))), index=[f'ECFP_{i}' for i in range(fp_bits)])
+    except Exception:
+        return pd.Series([0] * fp_bits, index=[f'ECFP_{i}' for i in range(fp_bits)])
+
+
+def extract_binding_energy(log_path):
+    try:
+        with open(log_path, 'r') as f:
+            content = f.read().strip()
+        match = re.search(r'[-+]?\d*\.\d+|\d+', content)
+        return float(match.group(0)) if match else None
+    except Exception:
+        return None
+
+# ----------------------------------------------------------------------
+# --- Worker Function ---
+# ----------------------------------------------------------------------
+
+def worker_process_molecule(args):
+    base_name, files, REFERENCE_MOL2_PATH, LSALIGN_EXE, FP_BITS, FP_RADIUS = args
+
+    # Load reference molecule
+    ref_mol = None
+    try:
+        ref_mol = Chem.MolFromMol2File(REFERENCE_MOL2_PATH, removeHs=False, sanitize=False)
+        if not ref_mol:
+            return None
+        Chem.AssignStereochemistry(ref_mol, cleanIt=True, force=True)
+        if ref_mol.GetNumConformers() == 0:
+            AllChem.EmbedMolecule(ref_mol, AllChem.ETKDG())
+    except Exception:
+        return None
+
+    ligand_mol2 = files['mol2']
+    log_file = files['log']
+    mol_3d = None
+    rdkit_success = False
+
+    # Load and sanitize ligand molecule
+    try:
+        mol_3d = Chem.MolFromMol2File(ligand_mol2, removeHs=False, sanitize=True)
+        if not mol_3d:
+            mol_unsanitized = Chem.MolFromMol2File(ligand_mol2, removeHs=False, sanitize=False)
+            mol_3d = repair_mol_for_sanitization(mol_unsanitized)
+        if mol_3d and mol_3d.GetNumConformers() > 0:
+            rdkit_success = True
+    except Exception:
+        mol_3d = None
+
+    # Compute COM distance (RDKit method + fallback to raw mol2)
+    com_distance = calculate_robust_distance(mol_3d, ref_mol)
+    
+    com_fallback_used = False
+    if com_distance is None:
+        com_distance = calculate_com_distance_from_mol2(ligand_mol2, ref_mol)
+        if com_distance is not None:
+             com_fallback_used = True
+
+    # Prepare result row
+    row = {"Full_Name": base_name, "Docking_Algorithm": extract_docking_algorithm(base_name),
+           "Binding_Energy": extract_binding_energy(log_file), "com_distance": com_distance}
+    
+    # Initialize RDKit error message
+    lsalign_error_message = None
+    if com_fallback_used:
+        lsalign_error_message = "RDKit MolFromMol2File failed, used raw mol2 fallback for CoM distance."
+    elif not rdkit_success:
+         lsalign_error_message = "RDKit MolFromMol2File failed, descriptors/similarity skipped."
+
+    # Process RDKit-dependent properties only if mol_3d load/sanitize was successful
+    if rdkit_success:
+        try:
+            row["Canonical_SMILES"] = Chem.MolToSmiles(mol_3d, isomericSmiles=True)
+            row["Standard_InChIKey"] = inchi.MolToInchiKey(mol_3d)
+        except Exception:
+            row["Canonical_SMILES"], row["Standard_InChIKey"] = None, None
+
+        for d_name in core_2d:
+            func_name, col_name = (d_name if isinstance(d_name, tuple) else (d_name, d_name))
+            try:
+                row[col_name] = GetFormalCharge(mol_3d) if col_name == "FormalCharge" else getattr(Descriptors, func_name)(mol_3d)
+            except Exception:
+                row[col_name] = None
+        
+        for d in core_3d:
+            try:
+                row[d] = getattr(Descriptors3D, d)(mol_3d)
+            except Exception:
+                row[d] = None
+
+        try:
+            fp_macs = MACCSkeys.GenMACCSKeys(mol_3d)
+            row["macs"] = fp_macs.GetNumOnBits()
+        except Exception:
+            row["macs"] = None
+
+        try:
+            fp_mol = AllChem.GetMorganFingerprint(mol_3d, 2)
+            fp_ref = AllChem.GetMorganFingerprint(ref_mol, 2)
+            row["tan_morgan"] = TanimotoSimilarity(fp_mol, fp_ref)
+        except Exception:
+            row["tan_morgan"] = None
+
+        try:
+            mcs_result = rdFMCS.FindMCS([mol_3d, ref_mol])
+            mcs_mol = Chem.MolFromSmarts(mcs_result.smartsString)
+            row["mcs_fraction"] = (2 * mcs_mol.GetNumHeavyAtoms()) / (mol_3d.GetNumHeavyAtoms() + ref_mol.GetNumHeavyAtoms())
+        except Exception:
+            row["mcs_fraction"] = None
+    else:
+         # Populate RDKit-dependent fields with None if RDKit failed
+        for col in ["Canonical_SMILES", "Standard_InChIKey", "macs", "tan_morgan", "mcs_fraction"] + [c[1] if isinstance(c, tuple) else c for c in core_2d] + core_3d:
+             if col not in row:
+                 row[col] = None
+                 
+    # Run LSalign and update the row
+    lsalign_results = run_lsalign_and_parse(ligand_mol2, REFERENCE_MOL2_PATH, LSALIGN_EXE)
+    
+    # Update the row with LSalign results (including the 'rmsd' column)
+    row.update(lsalign_results)
+    
+    # Finalize the error message, prioritizing LSalign's error over RDKit's
+    if row["LSalign_Error"] is None:
+        row["LSalign_Error"] = lsalign_error_message
+
+    fp_series = generate_ecfp_from_mol(mol_3d, FP_BITS, FP_RADIUS)
+    row.update(fp_series.to_dict())
+
+    return row
+
+# ----------------------------------------------------------------------
+# --- Main Function ---
+# ----------------------------------------------------------------------
+
+def process_data_and_save(mol2_dir, log_dir, lsalign_exe, reference_mol2, output_csv, limit):
+    if not os.path.exists(reference_mol2):
+        print(f"FATAL: Reference molecule not found: {reference_mol2}")
+        sys.exit(1)
+
+    file_groups_all = find_file_groups(mol2_dir, log_dir)
+    file_groups = dict(list(file_groups_all.items())[:limit]) if limit > 0 else file_groups_all
+    total_molecules = len(file_groups)
+    print(f"Found {total_molecules} molecules.")
+
+    ecfp_cols = [f'ECFP_{i}' for i in range(FP_BITS)]
+    final_cols = FINAL_ORDER_BASE + ecfp_cols
+    
+    # Write the header
+    pd.DataFrame(columns=final_cols).to_csv(output_csv, index=False, header=True, mode='w')
+
+    tasks = [(bn, f, reference_mol2, lsalign_exe, FP_BITS, FP_RADIUS) for bn, f in file_groups.items()]
+    processed = 0
+    with multiprocessing.Pool(processes=NUM_CORES) as pool:
+        for result in tqdm(pool.imap_unordered(worker_process_molecule, tasks), total=total_molecules, desc="Processing"):
+            if result:
+                # Append data row, ensuring correct column order
+                pd.DataFrame([result], columns=final_cols).to_csv(output_csv, index=False, header=False, mode='a')
+                processed += 1
+    print(f"✅ Finished. {processed} molecules processed.")
+
+
+if __name__ == "__main__":
+    try:
+        subprocess.run([LSALIGN_EXE, "-h"], capture_output=True, check=True)
+    except FileNotFoundError:
+        print(f"FATAL ERROR: LSalign not found at {LSALIGN_EXE}")
+        sys.exit(1)
+    except subprocess.CalledProcessError:
+         pass
+    except Exception as e:
+        print(f"FATAL ERROR checking LSalign: {e}")
+        sys.exit(1)
+        
+    process_data_and_save(MOL2_DIR, LOG_DIR, LSALIGN_EXE, REFERENCE_MOL2, OUTPUT_CSV, MOLECULE_LIMIT)
+
+```
+
+
+------------------------------------------------------------
+ Script: 00_feature_generation_scripts/03_generate_vina_features.py
+------------------------------------------------------------
+
+```python
+#!/usr/bin/env python3
+import os
+import subprocess
+import pandas as pd
+import numpy as np
+import re
+import sys
+import tempfile
+import multiprocessing
+from rdkit import RDLogger
+from tqdm import tqdm
+
+# RDKit Imports
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors, Descriptors3D, AllChem, MACCSkeys
+    from rdkit.Chem.rdmolops import GetFormalCharge
+    from rdkit.DataStructs import TanimotoSimilarity
+    from rdkit.Chem import rdFMCS, inchi
+except ImportError:
+    print("FATAL ERROR: RDKit is not installed. Please install RDKit to run this script.")
+    sys.exit(1)
+
+# ======================================================================
+# --- SUPPRESS RDKIT MESSAGES (CRITICAL FIX) ---
+RDLogger.DisableLog('rdApp.*')
+# ======================================================================
+
+# ======================================================================
+# --- CONFIGURATION (ADJUSTED FOR VINA GPU) ---
+# ======================================================================
+MOL2_DIR = "/home/kumara/malakafahs/dock/allosteric/vina_gpu_2/poses_mol2"
+LOG_DIR = "/home/kumara/malakafahs/dock/allosteric/vina_gpu_2/pose_logs"
+LSALIGN_EXE = "./LSalign"
+REFERENCE_MOL2 = "4tq_reference.mol2"
+OUTPUT_CSV = "b2_vina_final_results_2.csv"
+NUM_CORES = 16
+MOLECULE_LIMIT = 0
+FP_BITS = 2048
+FP_RADIUS = 2
+
+if not hasattr(np, "float"):
+    np.float = float
+
+core_2d = [
+    "MolWt", "MolLogP", "TPSA",
+    ("NumHDonors", "HBD"), ("NumHAcceptors", "HBA"),
+    ("NumRotatableBonds", "RotBonds"),
+    "HeavyAtomCount", "FractionCSP3",
+    ("NumAromaticRings", "AromaticRings"),
+    "FormalCharge"
+]
+
+core_3d = [
+    "Asphericity", "Eccentricity", "RadiusOfGyration", "SpherocityIndex",
+    "InertialShapeFactor", "PMI1", "PMI2", "PMI3", "NPR1", "NPR2"
+]
+
+FINAL_ORDER_BASE = [
+    "Full_Name", "Canonical_SMILES", "Standard_InChIKey", "Docking_Algorithm", "Binding_Energy",
+    "tan_morgan", "macs", "mcs_fraction", "rmsd", "com_distance",
+    "MolWt", "MolLogP", "TPSA", "HBD", "HBA", "RotBonds", "AromaticRings", "FormalCharge",
+    "HeavyAtomCount", "FractionCSP3",
+    "Asphericity", "Eccentricity", "RadiusOfGyration", "SpherocityIndex",
+    "InertialShapeFactor", "PMI1", "PMI2", "PMI3", "NPR1", "NPR2",
+    "PC_scoreQ", "PC_scoreT", "Pval_PC8Q", "Pval_PC8T", "JaccardR", "QUERY_SIZE", "TEMPL_SIZE",
+    "LSalign_Error" 
+]
+
+# ----------------------------------------------------------------------
+# --- Utility Functions ---
+# ----------------------------------------------------------------------
+
+def repair_mol_for_sanitization(mol):
+    if mol is None:
+        return None
+    flexible_flags = (
+        Chem.SanitizeFlags.SANITIZE_ALL &
+        ~Chem.SanitizeFlags.SANITIZE_KEKULIZE &
+        ~Chem.SanitizeFlags.SANITIZE_SETVALENCES
+    )
+    try:
+        Chem.SanitizeMol(mol, catchErrors=True)
+        return mol
+    except Exception:
+        pass
+    try:
+        Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+        Chem.SanitizeMol(mol, sanitizeOps=flexible_flags, catchErrors=True)
+        mol.UpdatePropertyCache(strict=False)
+        return mol
+    except Exception:
+        return None
+
+
+def calculate_robust_distance(mol_pose, mol_ref):
+    """Calculates CoM/CoG distance using RDKit's conformer data."""
+    if mol_pose is None or mol_ref is None or mol_pose.GetNumConformers() == 0 or mol_ref.GetNumConformers() == 0:
+        return None
+    try:
+        conf1 = mol_pose.GetConformer(0)
+        conf2 = mol_ref.GetConformer(0)
+        com1 = AllChem.ComputeCenterOfMass(mol_pose, conf1)
+        com2 = AllChem.ComputeCenterOfMass(mol_ref, conf2)
+        return float(np.linalg.norm(np.array(com1) - np.array(com2)))
+    except Exception:
+        pass
+    try:
+        pos1 = mol_pose.GetConformer(0).GetPositions()
+        pos2 = mol_ref.GetConformer(0).GetPositions()
+        cog1 = np.mean(pos1, axis=0)
+        cog2 = np.mean(pos2, axis=0)
+        return float(np.linalg.norm(cog1 - cog2))
+    except Exception:
+        pass
+    return None
+
+
+def calculate_com_distance_from_mol2(mol2_file, ref_mol):
+    """Backup method: compute COM distance directly from raw mol2 file atoms."""
+    try:
+        with open(mol2_file, 'r') as f:
+            lines = f.readlines()
+        atom_coords = []
+        in_atom_section = False
+        for line in lines:
+            if line.startswith("@<TRIPOS>ATOM"):
+                in_atom_section = True
+                continue
+            if line.startswith("@<TRIPOS>BOND"):
+                break
+            if in_atom_section:
+                parts = line.split()
+                if len(parts) >= 6:
+                    x, y, z = map(float, parts[2:5])
+                    atom_coords.append([x, y, z])
+        if not atom_coords:
+            return None
+        
+        ligand_center = np.mean(np.array(atom_coords), axis=0)
+        ref_conf = ref_mol.GetConformer(0)
+        ref_positions = np.array(ref_conf.GetPositions())
+        ref_center = np.mean(ref_positions, axis=0)
+        
+        return float(np.linalg.norm(ligand_center - ref_center))
+    except Exception:
+        return None
+
+
+def extract_docking_algorithm(file_name):
+    match = re.search(r'_(dock6|vina|vinardo|ad4)(?:_|\.)', file_name, re.IGNORECASE)
+    return match.group(1).lower() if match else 'unknown'
+
+
+def run_lsalign_and_parse(ligand_mol2, reference_mol2, lsalign_exe):
+    # Initialize with None and an error message holder
+    rmsd_row = {k: None for k in ["PC_scoreQ", "PC_scoreT", "Pval_PC8Q", "Pval_PC8T",
+                                 "JaccardR", "rmsd", "QUERY_SIZE", "TEMPL_SIZE", "LSalign_Error"]}
+    
+    cmd = [lsalign_exe, ligand_mol2, reference_mol2, "-H", "1"]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
+        stdout_output = result.stdout
+        
+        if result.returncode != 0 and "QUERY_NAME" not in stdout_output and "QEURY_NAME" not in stdout_output:
+            rmsd_row["LSalign_Error"] = f"LSalign exited with code {result.returncode}. Stderr: {result.stderr.strip()}"
+            return rmsd_row
+            
+        # --- CRITICAL FIX: Robust Regex to handle varying Filename/Path formats (e.g., 'p/ZINC...' or '999146...') ---
+        # The pattern captures the two ID columns (allowing for path characters like /) and the 8 numeric columns.
+        
+        regex_pattern = re.compile(
+            r'^\s*([a-zA-Z0-9_/.\-]+)\s+([\*a-zA-Z0-9_/.\-]+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+(\d+)\s+(\d+)\s*$', 
+            re.MULTILINE
+        )
+        
+        match = regex_pattern.search(stdout_output)
+
+        if match:
+            # The groups are: (ID1, ID2, PCQ, PCT, PvalQ, PvalT, JaccardR, RMSD, QSize, TSize)
+            data_parts = match.groups()
+            
+            # The data we want starts at index 2 (PC-score8Q)
+            if len(data_parts) >= 10:
+                try:
+                    rmsd_row["PC_scoreQ"] = float(data_parts[2])
+                    rmsd_row["PC_scoreT"] = float(data_parts[3])
+                    rmsd_row["Pval_PC8Q"] = float(data_parts[4])
+                    rmsd_row["Pval_PC8T"] = float(data_parts[5])
+                    rmsd_row["JaccardR"] = float(data_parts[6])
+                    rmsd_row["rmsd"] = float(data_parts[7])
+                    rmsd_row["QUERY_SIZE"] = int(data_parts[8])
+                    rmsd_row["TEMPL_SIZE"] = int(data_parts[9])
+                    rmsd_row["LSalign_Error"] = None # Success
+                except ValueError as e:
+                    rmsd_row["LSalign_Error"] = f"Error converting LSalign output to float/int. Captured data: {data_parts}. Error: {e}"
+            else:
+                rmsd_row["LSalign_Error"] = f"Regex captured insufficient columns ({len(data_parts)})."
+        else:
+            rmsd_row["LSalign_Error"] = "Could not find LSalign summary data line using robust regex search."
+            
+    except subprocess.TimeoutExpired:
+        rmsd_row["LSalign_Error"] = "LSalign command timed out (60 seconds)."
+    except Exception as e:
+        rmsd_row["LSalign_Error"] = f"Unexpected error during LSalign execution: {e}"
+        
+    return rmsd_row
+
+
+def find_file_groups(mol2_dir, log_dir):
+    mol2_files = {re.sub(r'\.mol2$', '', f): f for f in os.listdir(mol2_dir) if f.endswith('.mol2')}
+    log_files = {re.sub(r'\.(log|txt)$', '', f): f for f in os.listdir(log_dir) if f.endswith(('.log', '.txt'))}
+    return {base: {'mol2': os.path.join(mol2_dir, mol2_files[base]),
+                   'log': os.path.join(log_dir, log_files[base])}
+            for base in mol2_files if base in log_files}
+
+
+def generate_ecfp_from_mol(mol, fp_bits, fp_radius):
+    if mol is None:
+        return pd.Series([0] * fp_bits, index=[f'ECFP_{i}' for i in range(fp_bits)])
+    try:
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=fp_radius, nBits=fp_bits)
+        return pd.Series(list(map(int, list(fp.ToBitString()))), index=[f'ECFP_{i}' for i in range(fp_bits)])
+    except Exception:
+        return pd.Series([0] * fp_bits, index=[f'ECFP_{i}' for i in range(fp_bits)])
+
+
+def extract_binding_energy(log_path):
+    try:
+        with open(log_path, 'r') as f:
+            content = f.read().strip()
+        match = re.search(r'[-+]?\d*\.\d+|\d+', content)
+        return float(match.group(0)) if match else None
+    except Exception:
+        return None
+
+# ----------------------------------------------------------------------
+# --- Worker Function ---
+# ----------------------------------------------------------------------
+
+def worker_process_molecule(args):
+    base_name, files, REFERENCE_MOL2_PATH, LSALIGN_EXE, FP_BITS, FP_RADIUS = args
+
+    # Load reference molecule
+    ref_mol = None
+    try:
+        ref_mol = Chem.MolFromMol2File(REFERENCE_MOL2_PATH, removeHs=False, sanitize=False)
+        if not ref_mol:
+            return None
+        Chem.AssignStereochemistry(ref_mol, cleanIt=True, force=True)
+        if ref_mol.GetNumConformers() == 0:
+            AllChem.EmbedMolecule(ref_mol, AllChem.ETKDG())
+    except Exception:
+        return None
+
+    ligand_mol2 = files['mol2']
+    log_file = files['log']
+    mol_3d = None
+    rdkit_success = False
+
+    # Load and sanitize ligand molecule
+    try:
+        mol_3d = Chem.MolFromMol2File(ligand_mol2, removeHs=False, sanitize=True)
+        if not mol_3d:
+            mol_unsanitized = Chem.MolFromMol2File(ligand_mol2, removeHs=False, sanitize=False)
+            mol_3d = repair_mol_for_sanitization(mol_unsanitized)
+        if mol_3d and mol_3d.GetNumConformers() > 0:
+            rdkit_success = True
+    except Exception:
+        mol_3d = None
+
+    # Compute COM distance (RDKit method + fallback to raw mol2)
+    com_distance = calculate_robust_distance(mol_3d, ref_mol)
+    
+    com_fallback_used = False
+    if com_distance is None:
+        com_distance = calculate_com_distance_from_mol2(ligand_mol2, ref_mol)
+        if com_distance is not None:
+             com_fallback_used = True
+
+    # Prepare result row
+    row = {"Full_Name": base_name, "Docking_Algorithm": extract_docking_algorithm(base_name),
+           "Binding_Energy": extract_binding_energy(log_file), "com_distance": com_distance}
+    
+    # Initialize RDKit error message
+    lsalign_error_message = None
+    if com_fallback_used:
+        lsalign_error_message = "RDKit MolFromMol2File failed, used raw mol2 fallback for CoM distance."
+    elif not rdkit_success:
+         lsalign_error_message = "RDKit MolFromMol2File failed, descriptors/similarity skipped."
+
+    # Process RDKit-dependent properties only if mol_3d load/sanitize was successful
+    if rdkit_success:
+        try:
+            row["Canonical_SMILES"] = Chem.MolToSmiles(mol_3d, isomericSmiles=True)
+            row["Standard_InChIKey"] = inchi.MolToInchiKey(mol_3d)
+        except Exception:
+            row["Canonical_SMILES"], row["Standard_InChIKey"] = None, None
+
+        for d_name in core_2d:
+            func_name, col_name = (d_name if isinstance(d_name, tuple) else (d_name, d_name))
+            try:
+                row[col_name] = GetFormalCharge(mol_3d) if col_name == "FormalCharge" else getattr(Descriptors, func_name)(mol_3d)
+            except Exception:
+                row[col_name] = None
+        
+        for d in core_3d:
+            try:
+                row[d] = getattr(Descriptors3D, d)(mol_3d)
+            except Exception:
+                row[d] = None
+
+        try:
+            fp_macs = MACCSkeys.GenMACCSKeys(mol_3d)
+            row["macs"] = fp_macs.GetNumOnBits()
+        except Exception:
+            row["macs"] = None
+
+        try:
+            fp_mol = AllChem.GetMorganFingerprint(mol_3d, 2)
+            fp_ref = AllChem.GetMorganFingerprint(ref_mol, 2)
+            row["tan_morgan"] = TanimotoSimilarity(fp_mol, fp_ref)
+        except Exception:
+            row["tan_morgan"] = None
+
+        try:
+            mcs_result = rdFMCS.FindMCS([mol_3d, ref_mol])
+            mcs_mol = Chem.MolFromSmarts(mcs_result.smartsString)
+            row["mcs_fraction"] = (2 * mcs_mol.GetNumHeavyAtoms()) / (mol_3d.GetNumHeavyAtoms() + ref_mol.GetNumHeavyAtoms())
+        except Exception:
+            row["mcs_fraction"] = None
+    else:
+         # Populate RDKit-dependent fields with None if RDKit failed
+        for col in ["Canonical_SMILES", "Standard_InChIKey", "macs", "tan_morgan", "mcs_fraction"] + [c[1] if isinstance(c, tuple) else c for c in core_2d] + core_3d:
+             if col not in row:
+                 row[col] = None
+                 
+    # Run LSalign and update the row
+    lsalign_results = run_lsalign_and_parse(ligand_mol2, REFERENCE_MOL2_PATH, LSALIGN_EXE)
+    
+    # Update the row with LSalign results (including the 'rmsd' column)
+    row.update(lsalign_results)
+    
+    # Finalize the error message, prioritizing LSalign's error over RDKit's
+    if row["LSalign_Error"] is None:
+        row["LSalign_Error"] = lsalign_error_message
+
+    fp_series = generate_ecfp_from_mol(mol_3d, FP_BITS, FP_RADIUS)
+    row.update(fp_series.to_dict())
+
+    return row
+
+# ----------------------------------------------------------------------
+# --- Main Function ---
+# ----------------------------------------------------------------------
+
+def process_data_and_save(mol2_dir, log_dir, lsalign_exe, reference_mol2, output_csv, limit):
+    if not os.path.exists(reference_mol2):
+        print(f"FATAL: Reference molecule not found: {reference_mol2}")
+        sys.exit(1)
+
+    file_groups_all = find_file_groups(mol2_dir, log_dir)
+    file_groups = dict(list(file_groups_all.items())[:limit]) if limit > 0 else file_groups_all
+    total_molecules = len(file_groups)
+    print(f"Found {total_molecules} molecules.")
+
+    ecfp_cols = [f'ECFP_{i}' for i in range(FP_BITS)]
+    final_cols = FINAL_ORDER_BASE + ecfp_cols
+    
+    # Write the header
+    pd.DataFrame(columns=final_cols).to_csv(output_csv, index=False, header=True, mode='w')
+
+    tasks = [(bn, f, reference_mol2, lsalign_exe, FP_BITS, FP_RADIUS) for bn, f in file_groups.items()]
+    processed = 0
+    with multiprocessing.Pool(processes=NUM_CORES) as pool:
+        for result in tqdm(pool.imap_unordered(worker_process_molecule, tasks), total=total_molecules, desc="Processing"):
+            if result:
+                # Append data row, ensuring correct column order
+                pd.DataFrame([result], columns=final_cols).to_csv(output_csv, index=False, header=False, mode='a')
+                processed += 1
+    print(f"✅ Finished. {processed} molecules processed.")
+
+
+if __name__ == "__main__":
+    try:
+        subprocess.run([LSALIGN_EXE, "-h"], capture_output=True, check=True)
+    except FileNotFoundError:
+        print(f"FATAL ERROR: LSalign not found at {LSALIGN_EXE}")
+        sys.exit(1)
+    except subprocess.CalledProcessError:
+         pass
+    except Exception as e:
+        print(f"FATAL ERROR checking LSalign: {e}")
+        sys.exit(1)
+        
+    process_data_and_save(MOL2_DIR, LOG_DIR, LSALIGN_EXE, REFERENCE_MOL2, OUTPUT_CSV, MOLECULE_LIMIT)
+
+```
+
+
+------------------------------------------------------------
+ Script: 00_feature_generation_scripts/04_generate_vinardo_features.py
+------------------------------------------------------------
+
+```python
+#!/usr/bin/env python3
+import os
+import subprocess
+import pandas as pd
+import numpy as np
+import re
+import sys
+import tempfile
+import multiprocessing
+from rdkit import RDLogger
+from tqdm import tqdm
+
+# RDKit Imports
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors, Descriptors3D, AllChem, MACCSkeys
+    from rdkit.Chem.rdmolops import GetFormalCharge
+    from rdkit.DataStructs import TanimotoSimilarity
+    from rdkit.Chem import rdFMCS, inchi
+except ImportError:
+    print("FATAL ERROR: RDKit is not installed. Please install RDKit to run this script.")
+    sys.exit(1)
+
+# ======================================================================
+# --- SUPPRESS RDKIT MESSAGES (CRITICAL FIX) ---
+RDLogger.DisableLog('rdApp.*')
+# ======================================================================
+
+# ======================================================================
+# --- CONFIGURATION ---
+# ======================================================================
+MOL2_DIR = "/home/kumara/malakafahs/dock/allosteric/vinardo_2/poses_mol2"
+LOG_DIR = "/home/kumara/malakafahs/dock/allosteric/vinardo_2/pose_logs"
+LSALIGN_EXE = "./LSalign"
+REFERENCE_MOL2 = "4tq_reference.mol2"
+OUTPUT_CSV = "b2_vinardo_final_results_2.csv"
+NUM_CORES = 16
+MOLECULE_LIMIT = 0
+FP_BITS = 2048
+FP_RADIUS = 2
+
+if not hasattr(np, "float"):
+    np.float = float
+
+core_2d = [
+    "MolWt", "MolLogP", "TPSA",
+    ("NumHDonors", "HBD"), ("NumHAcceptors", "HBA"),
+    ("NumRotatableBonds", "RotBonds"),
+    "HeavyAtomCount", "FractionCSP3",
+    ("NumAromaticRings", "AromaticRings"),
+    "FormalCharge"
+]
+
+core_3d = [
+    "Asphericity", "Eccentricity", "RadiusOfGyration", "SpherocityIndex",
+    "InertialShapeFactor", "PMI1", "PMI2", "PMI3", "NPR1", "NPR2"
+]
+
+FINAL_ORDER_BASE = [
+    "Full_Name", "Canonical_SMILES", "Standard_InChIKey", "Docking_Algorithm", "Binding_Energy",
+    "tan_morgan", "macs", "mcs_fraction", "rmsd", "com_distance",
+    "MolWt", "MolLogP", "TPSA", "HBD", "HBA", "RotBonds", "AromaticRings", "FormalCharge",
+    "HeavyAtomCount", "FractionCSP3",
+    "Asphericity", "Eccentricity", "RadiusOfGyration", "SpherocityIndex",
+    "InertialShapeFactor", "PMI1", "PMI2", "PMI3", "NPR1", "NPR2",
+    "PC_scoreQ", "PC_scoreT", "Pval_PC8Q", "Pval_PC8T", "JaccardR", "QUERY_SIZE", "TEMPL_SIZE",
+    "LSalign_Error" 
+]
+
+# ----------------------------------------------------------------------
+# --- Utility Functions ---
+# ----------------------------------------------------------------------
+
+def repair_mol_for_sanitization(mol):
+    if mol is None:
+        return None
+    flexible_flags = (
+        Chem.SanitizeFlags.SANITIZE_ALL &
+        ~Chem.SanitizeFlags.SANITIZE_KEKULIZE &
+        ~Chem.SanitizeFlags.SANITIZE_SETVALENCES
+    )
+    try:
+        Chem.SanitizeMol(mol, catchErrors=True)
+        return mol
+    except Exception:
+        pass
+    try:
+        Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+        Chem.SanitizeMol(mol, sanitizeOps=flexible_flags, catchErrors=True)
+        mol.UpdatePropertyCache(strict=False)
+        return mol
+    except Exception:
+        return None
+
+
+def calculate_robust_distance(mol_pose, mol_ref):
+    """Calculates CoM/CoG distance using RDKit's conformer data."""
+    if mol_pose is None or mol_ref is None or mol_pose.GetNumConformers() == 0 or mol_ref.GetNumConformers() == 0:
+        return None
+    try:
+        conf1 = mol_pose.GetConformer(0)
+        conf2 = mol_ref.GetConformer(0)
+        com1 = AllChem.ComputeCenterOfMass(mol_pose, conf1)
+        com2 = AllChem.ComputeCenterOfMass(mol_ref, conf2)
+        return float(np.linalg.norm(np.array(com1) - np.array(com2)))
+    except Exception:
+        pass
+    try:
+        pos1 = mol_pose.GetConformer(0).GetPositions()
+        pos2 = mol_ref.GetConformer(0).GetPositions()
+        cog1 = np.mean(pos1, axis=0)
+        cog2 = np.mean(pos2, axis=0)
+        return float(np.linalg.norm(cog1 - cog2))
+    except Exception:
+        pass
+    return None
+
+
+def calculate_com_distance_from_mol2(mol2_file, ref_mol):
+    """Backup method: compute COM distance directly from raw mol2 file atoms."""
+    try:
+        with open(mol2_file, 'r') as f:
+            lines = f.readlines()
+        atom_coords = []
+        in_atom_section = False
+        for line in lines:
+            if line.startswith("@<TRIPOS>ATOM"):
+                in_atom_section = True
+                continue
+            if line.startswith("@<TRIPOS>BOND"):
+                break
+            if in_atom_section:
+                parts = line.split()
+                if len(parts) >= 6:
+                    x, y, z = map(float, parts[2:5])
+                    atom_coords.append([x, y, z])
+        if not atom_coords:
+            return None
+        
+        ligand_center = np.mean(np.array(atom_coords), axis=0)
+        ref_conf = ref_mol.GetConformer(0)
+        ref_positions = np.array(ref_conf.GetPositions())
+        ref_center = np.mean(ref_positions, axis=0)
+        
+        return float(np.linalg.norm(ligand_center - ref_center))
+    except Exception:
+        return None
+
+
+def extract_docking_algorithm(file_name):
+    match = re.search(r'_(dock6|vina|vinardo|ad4)(?:_|\.)', file_name, re.IGNORECASE)
+    return match.group(1).lower() if match else 'unknown'
+
+
+def run_lsalign_and_parse(ligand_mol2, reference_mol2, lsalign_exe):
+    # Initialize with None and an error message holder
+    rmsd_row = {k: None for k in ["PC_scoreQ", "PC_scoreT", "Pval_PC8Q", "Pval_PC8T",
+                                 "JaccardR", "rmsd", "QUERY_SIZE", "TEMPL_SIZE", "LSalign_Error"]}
+    
+    cmd = [lsalign_exe, ligand_mol2, reference_mol2, "-H", "1"]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
+        stdout_output = result.stdout
+        
+        if result.returncode != 0 and "QUERY_NAME" not in stdout_output and "QEURY_NAME" not in stdout_output:
+            rmsd_row["LSalign_Error"] = f"LSalign exited with code {result.returncode}. Stderr: {result.stderr.strip()}"
+            return rmsd_row
+            
+        # --- CRITICAL FIX: Robust Regex to handle varying Filename/Path formats (e.g., 'p/ZINC...' or '999146...') ---
+        # We need to include common path characters like '/' and '-' in the filename capture groups.
+        
+        # Pattern to capture the entire data line, allowing for slashes, hyphens, and alphanumeric characters 
+        # in the first two ID columns, followed by the 8 numeric columns.
+        regex_pattern = re.compile(
+            r'^\s*([a-zA-Z0-9_/.\-]+)\s+([\*a-zA-Z0-9_/.\-]+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+([-]?\d+\.\d+)\s+(\d+)\s+(\d+)\s*$', 
+            re.MULTILINE
+        )
+        
+        match = regex_pattern.search(stdout_output)
+
+        if match:
+            # The groups are: (ID1, ID2, PCQ, PCT, PvalQ, PvalT, JaccardR, RMSD, QSize, TSize)
+            data_parts = match.groups()
+            
+            # The data we want starts at index 2 (PC-score8Q)
+            if len(data_parts) >= 10:
+                try:
+                    rmsd_row["PC_scoreQ"] = float(data_parts[2])
+                    rmsd_row["PC_scoreT"] = float(data_parts[3])
+                    rmsd_row["Pval_PC8Q"] = float(data_parts[4])
+                    rmsd_row["Pval_PC8T"] = float(data_parts[5])
+                    rmsd_row["JaccardR"] = float(data_parts[6])
+                    rmsd_row["rmsd"] = float(data_parts[7])
+                    rmsd_row["QUERY_SIZE"] = int(data_parts[8])
+                    rmsd_row["TEMPL_SIZE"] = int(data_parts[9])
+                    rmsd_row["LSalign_Error"] = None # Success
+                except ValueError as e:
+                    rmsd_row["LSalign_Error"] = f"Error converting LSalign output to float/int. Captured data: {data_parts}. Error: {e}"
+            else:
+                rmsd_row["LSalign_Error"] = f"Regex captured insufficient columns ({len(data_parts)})."
+        else:
+            rmsd_row["LSalign_Error"] = "Could not find LSalign summary data line using robust regex search."
+            
+    except subprocess.TimeoutExpired:
+        rmsd_row["LSalign_Error"] = "LSalign command timed out (60 seconds)."
+    except Exception as e:
+        rmsd_row["LSalign_Error"] = f"Unexpected error during LSalign execution: {e}"
+        
+    return rmsd_row
+
+
+def find_file_groups(mol2_dir, log_dir):
+    mol2_files = {re.sub(r'\.mol2$', '', f): f for f in os.listdir(mol2_dir) if f.endswith('.mol2')}
+    log_files = {re.sub(r'\.(log|txt)$', '', f): f for f in os.listdir(log_dir) if f.endswith(('.log', '.txt'))}
+    return {base: {'mol2': os.path.join(mol2_dir, mol2_files[base]),
+                   'log': os.path.join(log_dir, log_files[base])}
+            for base in mol2_files if base in log_files}
+
+
+def generate_ecfp_from_mol(mol, fp_bits, fp_radius):
+    if mol is None:
+        return pd.Series([0] * fp_bits, index=[f'ECFP_{i}' for i in range(fp_bits)])
+    try:
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=fp_radius, nBits=fp_bits)
+        return pd.Series(list(map(int, list(fp.ToBitString()))), index=[f'ECFP_{i}' for i in range(fp_bits)])
+    except Exception:
+        return pd.Series([0] * fp_bits, index=[f'ECFP_{i}' for i in range(fp_bits)])
+
+
+def extract_binding_energy(log_path):
+    try:
+        with open(log_path, 'r') as f:
+            content = f.read().strip()
+        match = re.search(r'[-+]?\d*\.\d+|\d+', content)
+        return float(match.group(0)) if match else None
+    except Exception:
+        return None
+
+# ----------------------------------------------------------------------
+# --- Worker Function ---
+# ----------------------------------------------------------------------
+
+def worker_process_molecule(args):
+    base_name, files, REFERENCE_MOL2_PATH, LSALIGN_EXE, FP_BITS, FP_RADIUS = args
+
+    # Load reference molecule
+    ref_mol = None
+    try:
+        ref_mol = Chem.MolFromMol2File(REFERENCE_MOL2_PATH, removeHs=False, sanitize=False)
+        if not ref_mol:
+            return None
+        Chem.AssignStereochemistry(ref_mol, cleanIt=True, force=True)
+        if ref_mol.GetNumConformers() == 0:
+            AllChem.EmbedMolecule(ref_mol, AllChem.ETKDG())
+    except Exception:
+        return None
+
+    ligand_mol2 = files['mol2']
+    log_file = files['log']
+    mol_3d = None
+    rdkit_success = False
+
+    # Load and sanitize ligand molecule
+    try:
+        mol_3d = Chem.MolFromMol2File(ligand_mol2, removeHs=False, sanitize=True)
+        if not mol_3d:
+            mol_unsanitized = Chem.MolFromMol2File(ligand_mol2, removeHs=False, sanitize=False)
+            mol_3d = repair_mol_for_sanitization(mol_unsanitized)
+        if mol_3d and mol_3d.GetNumConformers() > 0:
+            rdkit_success = True
+    except Exception:
+        mol_3d = None
+
+    # Compute COM distance (RDKit method + fallback to raw mol2)
+    com_distance = calculate_robust_distance(mol_3d, ref_mol)
+    
+    com_fallback_used = False
+    if com_distance is None:
+        com_distance = calculate_com_distance_from_mol2(ligand_mol2, ref_mol)
+        if com_distance is not None:
+             com_fallback_used = True
+
+    # Prepare result row
+    row = {"Full_Name": base_name, "Docking_Algorithm": extract_docking_algorithm(base_name),
+           "Binding_Energy": extract_binding_energy(log_file), "com_distance": com_distance}
+    
+    # Initialize RDKit error message
+    lsalign_error_message = None
+    if com_fallback_used:
+        lsalign_error_message = "RDKit MolFromMol2File failed, used raw mol2 fallback for CoM distance."
+    elif not rdkit_success:
+         lsalign_error_message = "RDKit MolFromMol2File failed, descriptors/similarity skipped."
+
+    # Process RDKit-dependent properties only if mol_3d load/sanitize was successful
+    if rdkit_success:
+        try:
+            row["Canonical_SMILES"] = Chem.MolToSmiles(mol_3d, isomericSmiles=True)
+            row["Standard_InChIKey"] = inchi.MolToInchiKey(mol_3d)
+        except Exception:
+            row["Canonical_SMILES"], row["Standard_InChIKey"] = None, None
+
+        for d_name in core_2d:
+            func_name, col_name = (d_name if isinstance(d_name, tuple) else (d_name, d_name))
+            try:
+                row[col_name] = GetFormalCharge(mol_3d) if col_name == "FormalCharge" else getattr(Descriptors, func_name)(mol_3d)
+            except Exception:
+                row[col_name] = None
+        
+        for d in core_3d:
+            try:
+                row[d] = getattr(Descriptors3D, d)(mol_3d)
+            except Exception:
+                row[d] = None
+
+        try:
+            fp_macs = MACCSkeys.GenMACCSKeys(mol_3d)
+            row["macs"] = fp_macs.GetNumOnBits()
+        except Exception:
+            row["macs"] = None
+
+        try:
+            fp_mol = AllChem.GetMorganFingerprint(mol_3d, 2)
+            fp_ref = AllChem.GetMorganFingerprint(ref_mol, 2)
+            row["tan_morgan"] = TanimotoSimilarity(fp_mol, fp_ref)
+        except Exception:
+            row["tan_morgan"] = None
+
+        try:
+            mcs_result = rdFMCS.FindMCS([mol_3d, ref_mol])
+            mcs_mol = Chem.MolFromSmarts(mcs_result.smartsString)
+            row["mcs_fraction"] = (2 * mcs_mol.GetNumHeavyAtoms()) / (mol_3d.GetNumHeavyAtoms() + ref_mol.GetNumHeavyAtoms())
+        except Exception:
+            row["mcs_fraction"] = None
+    else:
+         # Populate RDKit-dependent fields with None if RDKit failed
+        for col in ["Canonical_SMILES", "Standard_InChIKey", "macs", "tan_morgan", "mcs_fraction"] + [c[1] if isinstance(c, tuple) else c for c in core_2d] + core_3d:
+             if col not in row:
+                 row[col] = None
+                 
+    # Run LSalign and update the row
+    lsalign_results = run_lsalign_and_parse(ligand_mol2, REFERENCE_MOL2_PATH, LSALIGN_EXE)
+    
+    # Update the row with LSalign results (including the 'rmsd' column)
+    row.update(lsalign_results)
+    
+    # Finalize the error message, prioritizing LSalign's error over RDKit's
+    if row["LSalign_Error"] is None:
+        row["LSalign_Error"] = lsalign_error_message
+
+    fp_series = generate_ecfp_from_mol(mol_3d, FP_BITS, FP_RADIUS)
+    row.update(fp_series.to_dict())
+
+    return row
+
+# ----------------------------------------------------------------------
+# --- Main Function ---
+# ----------------------------------------------------------------------
+
+def process_data_and_save(mol2_dir, log_dir, lsalign_exe, reference_mol2, output_csv, limit):
+    if not os.path.exists(reference_mol2):
+        print(f"FATAL: Reference molecule not found: {reference_mol2}")
+        sys.exit(1)
+
+    file_groups_all = find_file_groups(mol2_dir, log_dir)
+    file_groups = dict(list(file_groups_all.items())[:limit]) if limit > 0 else file_groups_all
+    total_molecules = len(file_groups)
+    print(f"Found {total_molecules} molecules.")
+
+    ecfp_cols = [f'ECFP_{i}' for i in range(FP_BITS)]
+    final_cols = FINAL_ORDER_BASE + ecfp_cols
+    
+    # Write the header
+    pd.DataFrame(columns=final_cols).to_csv(output_csv, index=False, header=True, mode='w')
+
+    tasks = [(bn, f, reference_mol2, lsalign_exe, FP_BITS, FP_RADIUS) for bn, f in file_groups.items()]
+    processed = 0
+    with multiprocessing.Pool(processes=NUM_CORES) as pool:
+        for result in tqdm(pool.imap_unordered(worker_process_molecule, tasks), total=total_molecules, desc="Processing"):
+            if result:
+                # Append data row, ensuring correct column order
+                pd.DataFrame([result], columns=final_cols).to_csv(output_csv, index=False, header=False, mode='a')
+                processed += 1
+    print(f"✅ Finished. {processed} molecules processed.")
+
+
+if __name__ == "__main__":
+    try:
+        subprocess.run([LSALIGN_EXE, "-h"], capture_output=True, check=True)
+    except FileNotFoundError:
+        print(f"FATAL ERROR: LSalign not found at {LSALIGN_EXE}")
+        sys.exit(1)
+    except subprocess.CalledProcessError:
+         pass
+    except Exception as e:
+        print(f"FATAL ERROR checking LSalign: {e}")
+        sys.exit(1)
+        
+    process_data_and_save(MOL2_DIR, LOG_DIR, LSALIGN_EXE, REFERENCE_MOL2, OUTPUT_CSV, MOLECULE_LIMIT)
+
+```
+
+
+------------------------------------------------------------
+ Script: 02_training_scripts/00_clean_data.py
+------------------------------------------------------------
+
+```python
+import pandas as pd
+import os
+
+# Original CSV files
+csv_files = [
+    'b2_ad4_final_results_2.csv',
+    'b2_dock6_final_results_2.csv',
+    'b2_vina_final_results_2.csv',
+    'b2_vinardo_final_results_2.csv'
+]
+
+# Directory for cleaned CSVs
+clean_dir = 'cleaned_csv'
+os.makedirs(clean_dir, exist_ok=True)
+
+# Summary report data
+summary_data = []
+
+for file in csv_files:
+    df = pd.read_csv(file)
+    total_rows = len(df)
+    
+    # Keep only rows where Canonical_SMILES is not empty
+    df_clean = df[df['Canonical_SMILES'].notna() & (df['Canonical_SMILES'] != '')]
+    cleaned_rows = len(df_clean)
+    removed_rows = total_rows - cleaned_rows
+    removed_percentage = (removed_rows / total_rows) * 100
+    
+    # Save cleaned CSV
+    clean_file_path = os.path.join(clean_dir, file.replace('.csv', '_clean.csv'))
+    df_clean.to_csv(clean_file_path, index=False)
+    
+    # Append to summary
+    summary_data.append({
+        'File': file,
+        'Total_Rows': total_rows,
+        'Cleaned_Rows': cleaned_rows,
+        'Removed_Rows': removed_rows,
+        'Removed_Percentage': removed_percentage
+    })
+
+# Save summary report
+summary_df = pd.DataFrame(summary_data)
+summary_df.to_csv('cleaning_summary_report.csv', index=False)
+print("Cleaning complete. Summary saved to 'cleaning_summary_report.csv'")
+
+
+```
+
+
+------------------------------------------------------------
+ Script: 02_training_scripts/mlp_train3.py
+------------------------------------------------------------
+
+```python
+import pandas as pd
+import numpy as np
+import warnings
+import datetime
+import joblib
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, MinMaxScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+# --- NEW IMPORT for Neural Network Model (MLP) ---
+from sklearn.neural_network import MLPRegressor
+# --- NEW IMPORT for handling missing values ---
+from sklearn.impute import SimpleImputer
+
+
+# --- WARNING SUPPRESSION ---
+warnings.filterwarnings("ignore")
+
+# --- 0. REPORTING FUNCTION (Kept as is) ---
+def save_report_to_file(critical_data_dict, filename_prefix="model_training_report"):
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{filename_prefix}_{timestamp}.txt"
+
+    with open(filename, 'w') as f:
+        f.write("="*80 + "\n")
+        f.write(f"{'MODEL TRAINING AND EVALUATION REPORT':^80}\n")
+        f.write(f"{'Generated on: ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'):^80}\n")
+        f.write("="*80 + "\n\n")
+
+        for title, content in critical_data_dict.items():
+            f.write("-" * 40 + "\n")
+            f.write(f"| {title.upper()} |\n")
+            f.write("-" * 40 + "\n")
+            if isinstance(content, dict):
+                for key, value in content.items():
+                    # Handle numpy types in reporting
+                    if isinstance(value, (int, float, np.float64, np.float32)):
+                        f.write(f"{key:<35}: {value:.4f}\n")
+                    elif isinstance(value, list):
+                        # Write list elements on one line for CV RMSE
+                        list_str = ", ".join([f"{x:.4f}" for x in value]) if len(value) < 10 else f"[List of {len(value)} values]"
+                        f.write(f"{key:<35}: [{list_str}]\n")
+                    else:
+                        f.write(f"{key:<35}: {value}\n")
+            else:
+                f.write(f"{content}\n")
+            f.write("\n")
+    print(f"\n[INFO] Report saved to: {filename}")
+
+# --- 1. CONFIG (Using the same configuration as your XGBoost script) ---
+CSV_FILES = [
+    'b2_ad4_final_results_2_clean.csv',
+    'b2_dock6_final_results_2_clean.csv',
+    'b2_vina_final_results_2_clean.csv',
+    'b2_vinardo_final_results_2_clean.csv'
+]
+TARGET_COLUMN = 'Binding_Energy'
+RANDOM_SEED = 42
+TEST_SIZE = 0.15
+VALIDATION_SIZE = 0.15
+N_JOBS = -1
+
+# --- 2. LOOP OVER CSV FILES ---
+for file_path in CSV_FILES:
+    print(f"\n=== Processing: {file_path} ===")
+    REPORT_DATA = {}
+    REPORT_DATA['CONFIGURATION'] = {
+        'File Path': file_path,
+        'Target Column': TARGET_COLUMN,
+        'Random Seed': RANDOM_SEED,
+        'Test Size': TEST_SIZE,
+        'Validation Size': VALIDATION_SIZE,
+        'N_Jobs': N_JOBS
+    }
+
+    # --- 2a. LOAD DATA ---
+    df = pd.read_csv(file_path)
+    initial_shape = df.shape
+    # Drop identifier columns (Full_Name and Canonical_SMILES)
+    df.drop(columns=['Full_Name', 'Canonical_SMILES'], inplace=True, errors='ignore')
+    # Drop rows where the target column is missing (mandatory for training)
+    df.dropna(subset=[TARGET_COLUMN], inplace=True)
+    final_shape = df.shape
+    REPORT_DATA['DATASET_INFO'] = {
+        'Initial Rows/Columns': initial_shape,
+        'After Drop NA (Target only)': final_shape
+    }
+
+    # --- 2b. PREPARE FEATURES & TARGET ---
+    X = df.drop(columns=[TARGET_COLUMN])
+    y = df[TARGET_COLUMN]
+
+    # Identify feature types
+    numeric_features = X.select_dtypes(include=np.number).columns.tolist()
+    categorical_features = X.select_dtypes(include='object').columns.tolist()
+
+    # --- 2c. DATA SPLIT (Kept as is) ---
+    X_train_val, X_test, y_train_val, y_test = train_test_split(
+        X, y, test_size=TEST_SIZE, random_state=RANDOM_SEED
+    )
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train_val, y_train_val,
+        test_size=VALIDATION_SIZE/(1-TEST_SIZE),
+        random_state=RANDOM_SEED
+    )
+    REPORT_DATA['DATA_SPLIT_SIZES'] = {
+        'Training': X_train.shape[0],
+        'Validation': X_val.shape[0],
+        'Test': X_test.shape[0]
+    }
+
+    # --- 2d. PREPROCESSING (CRITICAL: Added Imputation to handle NaNs) ---
+    
+    # Pipeline for Numerical Features: Impute then Scale
+    numeric_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median')), # Fills NaNs with the median value
+        ('scaler', MinMaxScaler()) # Scales features for MLP
+    ])
+    
+    # Pipeline for Categorical Features: Impute then One-Hot Encode
+    categorical_transformer = Pipeline(steps=[
+        # Fills categorical NaNs with a constant string 'missing'
+        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore')) # Converts categories to numbers
+    ])
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numeric_transformer, numeric_features),
+            ('cat', categorical_transformer, categorical_features)
+        ],
+        remainder='passthrough',
+        n_jobs=N_JOBS,
+        verbose_feature_names_out=False
+    )
+
+    # --- 2e. MODEL TRAINING (MLP REGRESSOR - HYPERPARAMETER TUNED FOR HIGH R2) ---
+    # Define and train the MLP Regressor
+    mlp_model = MLPRegressor(
+        hidden_layer_sizes=(256, 128, 64, 32), # Deepened the network substantially
+        activation='relu',               
+        solver='adam',                   
+        max_iter=3000,                   # Increased max epochs for convergence
+        learning_rate_init=0.0008,       # Slightly lower learning rate
+        alpha=0.001,                     # Increased L2 penalty for better generalization
+        tol=1e-5,                        # Tighter tolerance for convergence
+        early_stopping=True,             
+        random_state=RANDOM_SEED,
+        # verbose=True                   # Uncomment to see training loss during fit
+    )
+
+    # Since the Imputers are now in the Preprocessor, we can fit and transform
+    # The preprocessor handles the NaNs before the data reaches the MLP.
+    print("Fitting Preprocessor and transforming data...")
+    X_train_proc = preprocessor.fit_transform(X_train)
+    X_val_proc = preprocessor.transform(X_val)
+
+    print("Training MLP model (Max Iter: 3000, Layers: 4, Alpha: 0.001)...")
+    mlp_model.fit(X_train_proc, y_train) 
+    
+    # --- 2f. EVALUATION ---
+    def evaluate(model, X_proc, y_true, name="Dataset"):
+        # For evaluation, we use the pre-transformed data
+        y_pred = model.predict(X_proc)
+        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+        mae = mean_absolute_error(y_true, y_pred)
+        r2 = r2_score(y_true, y_pred)
+        print(f"{name} -> RMSE: {rmse:.4f}, MAE: {mae:.4f}, R2: {r2:.4f}")
+        return rmse, mae, r2
+
+    X_test_proc = preprocessor.transform(X_test)
+    val_metrics = evaluate(mlp_model, X_val_proc, y_val, "Validation")
+    test_metrics = evaluate(mlp_model, X_test_proc, y_test, "Test")
+
+    # --- 2g. CROSS-VALIDATION (Pipeline with MLP) ---
+    print("Performing 5-fold cross-validation...")
+    # Define the full pipeline including the preprocessor and MLPRegressor
+    full_pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+                                    ('regressor', MLPRegressor(
+                                        hidden_layer_sizes=(256, 128, 64, 32), # Updated Architecture
+                                        activation='relu',
+                                        solver='adam',
+                                        max_iter=3000,                       # Updated Max Iterations
+                                        learning_rate_init=0.0008,           # Updated Learning Rate
+                                        alpha=0.001,                         # Updated Regularization
+                                        tol=1e-5,                            # Updated Tolerance
+                                        early_stopping=True,
+                                        random_state=RANDOM_SEED
+                                    ))])
+    
+    # Perform cross-validation on the combined training/validation set (X_train_val)
+    # The pipeline ensures that imputation and scaling are done correctly within each CV fold
+    cv_scores = cross_val_score(full_pipeline, X_train_val, y_train_val,
+                                scoring='neg_root_mean_squared_error', cv=5, n_jobs=N_JOBS)
+    cv_rmse = -cv_scores
+    print(f"CV 5-fold RMSE: {cv_rmse.mean():.4f} (+/- {cv_rmse.std():.4f})")
+
+    # --- 2h. FINAL TRAINING & SAVE MODEL ---
+    print("Refitting final model on full training+validation set...")
+    # This trains the pipeline (Preprocessor + MLP) one last time on the most data
+    full_pipeline.fit(X_train_val, y_train_val)
+    # Changed filename to reflect the TUNED MLP model
+    model_filename = f"{file_path.split('_clean')[0]}_mlp_model_tuned.pkl"
+    joblib.dump(full_pipeline, model_filename)
+    print(f"Model saved to: {model_filename}")
+
+    # --- 2i. REPORT ---
+    REPORT_DATA['MLP_CONFIGURATION'] = {
+        'Hidden Layers': str(mlp_model.hidden_layer_sizes),
+        'Activation': mlp_model.activation,
+        'Solver': mlp_model.solver,
+        'Max Iterations': mlp_model.max_iter,
+        'Learning Rate Init': mlp_model.learning_rate_init,
+        'Alpha (L2)': mlp_model.alpha,
+        'Tolerance (tol)': mlp_model.tol,
+        'Early Stopping': mlp_model.early_stopping,
+        'Imputation Strategy (Numeric)': 'median',
+        'Imputation Strategy (Categorical)': 'constant (missing)',
+    }
+    REPORT_DATA['TRAINING_METRICS'] = {
+        'Validation RMSE/MAE/R2': val_metrics,
+        'Test RMSE/MAE/R2': test_metrics,
+        'CV 5-fold RMSE': cv_rmse.tolist(),
+        'CV Mean RMSE': float(cv_rmse.mean()),
+        'CV Std RMSE': float(cv_rmse.std())
+    }
+    REPORT_DATA['MODEL_SAVE'] = {'Filename': model_filename}
+
+    save_report_to_file(REPORT_DATA, filename_prefix=file_path.split('_clean')[0]+"_mlp_report_tuned")
+
+print("\nAll CSVs processed. Four highly tuned MLP models generated successfully.")
+
+```
+
+
+------------------------------------------------------------
+ Script: 02_training_scripts/train_4.py
+------------------------------------------------------------
+
+```python
+import pandas as pd
+import numpy as np
+import warnings
+import datetime
+import joblib
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, MinMaxScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import xgboost as xgb
+
+# --- WARNING SUPPRESSION ---
+warnings.filterwarnings("ignore")
+
+# --- 0. REPORTING FUNCTION ---
+def save_report_to_file(critical_data_dict, filename_prefix="model_training_report"):
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{filename_prefix}_{timestamp}.txt"
+
+    with open(filename, 'w') as f:
+        f.write("="*80 + "\n")
+        f.write(f"{'MODEL TRAINING AND EVALUATION REPORT':^80}\n")
+        f.write(f"{'Generated on: ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'):^80}\n")
+        f.write("="*80 + "\n\n")
+
+        for title, content in critical_data_dict.items():
+            f.write("-" * 40 + "\n")
+            f.write(f"| {title.upper()} |\n")
+            f.write("-" * 40 + "\n")
+            if isinstance(content, dict):
+                for key, value in content.items():
+                    # Handle numpy types in reporting
+                    if isinstance(value, (int, float, np.float64, np.float32)):
+                        f.write(f"{key:<35}: {value:.4f}\n")
+                    elif isinstance(value, list):
+                        # Write list elements on one line for CV RMSE
+                        list_str = ", ".join([f"{x:.4f}" for x in value]) if len(value) < 10 else f"[List of {len(value)} values]"
+                        f.write(f"{key:<35}: [{list_str}]\n")
+                    else:
+                        f.write(f"{key:<35}: {value}\n")
+            else:
+                f.write(f"{content}\n")
+            f.write("\n")
+    print(f"\n[INFO] Report saved to: {filename}")
+
+# --- 1. CONFIG (Set base for High R2 training) ---
+CSV_FILES = [
+    'b2_ad4_final_results_2_clean.csv',
+    'b2_dock6_final_results_2_clean.csv',
+    'b2_vina_final_results_2_clean.csv',
+    'b2_vinardo_final_results_2_clean.csv'
+]
+TARGET_COLUMN = 'Binding_Energy'
+RANDOM_SEED = 42
+TEST_SIZE = 0.15
+VALIDATION_SIZE = 0.15
+N_JOBS = -1
+
+# --- 2. LOOP OVER CSV FILES ---
+for file_path in CSV_FILES:
+    print(f"\n=== Processing: {file_path} ===")
+    REPORT_DATA = {}
+    REPORT_DATA['CONFIGURATION'] = {
+        'File Path': file_path,
+        'Target Column': TARGET_COLUMN,
+        'Random Seed': RANDOM_SEED,
+        'Test Size': TEST_SIZE,
+        'Validation Size': VALIDATION_SIZE,
+        'N_Jobs': N_JOBS
+    }
+
+    # --- 2a. LOAD DATA ---
+    df = pd.read_csv(file_path)
+    initial_shape = df.shape
+    df.drop(columns=['Full_Name', 'Canonical_SMILES'], inplace=True, errors='ignore')
+    df.dropna(subset=[TARGET_COLUMN], inplace=True)
+    final_shape = df.shape
+    REPORT_DATA['DATASET_INFO'] = {
+        'Initial Rows/Columns': initial_shape,
+        'After Drop NA': final_shape
+    }
+
+    # --- 2b. PREPARE FEATURES & TARGET ---
+    X = df.drop(columns=[TARGET_COLUMN])
+    y = df[TARGET_COLUMN]
+
+    numeric_features = X.select_dtypes(include=np.number).columns.tolist()
+    categorical_features = X.select_dtypes(include='object').columns.tolist()
+
+    # --- 2c. DATA SPLIT ---
+    X_train_val, X_test, y_train_val, y_test = train_test_split(
+        X, y, test_size=TEST_SIZE, random_state=RANDOM_SEED
+    )
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train_val, y_train_val,
+        test_size=VALIDATION_SIZE/(1-TEST_SIZE),
+        random_state=RANDOM_SEED
+    )
+    REPORT_DATA['DATA_SPLIT_SIZES'] = {
+        'Training': X_train.shape[0],
+        'Validation': X_val.shape[0],
+        'Test': X_test.shape[0]
+    }
+
+    # --- 2d. PREPROCESSING (Switch to MinMaxScaler for potential R2 boost) ---
+    numeric_transformer = Pipeline(steps=[('scaler', MinMaxScaler())])
+    categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder(handle_unknown='ignore'))])
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numeric_transformer, numeric_features),
+            ('cat', categorical_transformer, categorical_features)
+        ],
+        remainder='passthrough',
+        n_jobs=N_JOBS,
+        verbose_feature_names_out=False
+    )
+
+    # --- 2e. MODEL TRAINING (High R2 Hyperparameters) ---
+    xgb_model = xgb.XGBRegressor(
+        objective='reg:squarederror',
+        n_estimators=15000, # Significantly increased
+        learning_rate=0.008, # Significantly decreased
+        max_depth=9, # Increased
+        colsample_bytree=0.8, # Slightly decreased
+        subsample=0.8, # Slightly decreased
+        random_state=RANDOM_SEED,
+        early_stopping_rounds=200, # Increased
+        eval_metric='rmse',
+        enable_categorical=True,
+        device='cuda'
+    )
+
+    # Preprocess training and validation sets
+    X_train_proc = preprocessor.fit_transform(X_train)
+    X_val_proc = preprocessor.transform(X_val)
+
+    eval_set = [(X_val_proc, y_val)]
+    print("Training model with high R2 parameters...")
+    xgb_model.fit(X_train_proc, y_train, eval_set=eval_set, verbose=False)
+
+    best_iter = xgb_model.best_iteration
+    print(f"Best iteration: {best_iter}")
+
+    # --- 2f. EVALUATION ---
+    def evaluate(model, X_proc, y_true, name="Dataset"):
+        y_pred = model.predict(X_proc)
+        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+        mae = mean_absolute_error(y_true, y_pred)
+        r2 = r2_score(y_true, y_pred)
+        print(f"{name} -> RMSE: {rmse:.4f}, MAE: {mae:.4f}, R2: {r2:.4f}")
+        return rmse, mae, r2
+
+    X_test_proc = preprocessor.transform(X_test)
+    val_metrics = evaluate(xgb_model, X_val_proc, y_val, "Validation")
+    test_metrics = evaluate(xgb_model, X_test_proc, y_test, "Test")
+
+    # --- 2g. CROSS-VALIDATION (Adjusted for final training parameters) ---
+    print("Performing 5-fold cross-validation...")
+    full_pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+                                    ('regressor', xgb.XGBRegressor(
+                                        objective='reg:squarederror',
+                                        n_estimators=best_iter + 500, # Used the best_iter from early stopping
+                                        learning_rate=0.008, # Consistent with training
+                                        max_depth=9, # Consistent with training
+                                        colsample_bytree=0.8,
+                                        subsample=0.8,
+                                        random_state=RANDOM_SEED,
+                                        eval_metric='rmse',
+                                        enable_categorical=True,
+                                        device='cuda'
+                                    ))])
+    cv_scores = cross_val_score(full_pipeline, X_train_val, y_train_val,
+                                scoring='neg_root_mean_squared_error', cv=5, n_jobs=N_JOBS)
+    cv_rmse = -cv_scores
+    print(f"CV 5-fold RMSE: {cv_rmse.mean():.4f} (+/- {cv_rmse.std():.4f})")
+
+    # --- 2h. FINAL TRAINING & SAVE MODEL ---
+    print("Refitting final model on full training+validation set...")
+    full_pipeline.fit(X_train_val, y_train_val)
+    model_filename = f"{file_path.split('_clean')[0]}_model.pkl"
+    joblib.dump(full_pipeline, model_filename)
+    print(f"Model saved to: {model_filename}")
+
+    # --- 2i. REPORT ---
+    REPORT_DATA['TRAINING_METRICS'] = {
+        'Validation RMSE/MAE/R2': val_metrics,
+        'Test RMSE/MAE/R2': test_metrics,
+        'CV 5-fold RMSE': cv_rmse.tolist(),
+        'CV Mean RMSE': float(cv_rmse.mean()),
+        'CV Std RMSE': float(cv_rmse.std())
+    }
+    REPORT_DATA['MODEL_SAVE'] = {'Filename': model_filename}
+
+    save_report_to_file(REPORT_DATA, filename_prefix=file_path.split('_clean')[0]+"_report")
+
+print("\nAll CSVs processed. Models and reports generated successfully.")
+
+```
+
+
+------------------------------------------------------------
+ Script: 02_training_scripts/train_final_meta_mlp_xg.py
+------------------------------------------------------------
+
+```python
+import pandas as pd
+import numpy as np
+import joblib
+import warnings
+import datetime
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import RidgeCV
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+# --- WARNING SUPPRESSION ---
+warnings.filterwarnings("ignore")
+
+# --- CONFIGURATION ---
+TARGET_COLUMN = 'Binding_Energy'
+RANDOM_SEED = 42
+TEST_SIZE = 0.15
+
+# --- DEFINITION OF ALL 8 BASE MODELS TO STACK ---
+# Each tuple: (Prediction Column Name, Model Path, Data File Path)
+# NOTE: Using the '_tuned' suffix for MLP models for consistency with the last run.
+MODELS_TO_STACK = [
+    # 4 XGBoost Models (Original)
+    ('AD4_XGB_PRED', 'b2_ad4_final_results_2_model.pkl', 'b2_ad4_final_results_2_clean.csv'),
+    ('DOCK6_XGB_PRED', 'b2_dock6_final_results_2_model.pkl', 'b2_dock6_final_results_2_clean.csv'),
+    ('VINA_XGB_PRED', 'b2_vina_final_results_2_model.pkl', 'b2_vina_final_results_2_clean.csv'),
+    ('VINARDO_XGB_PRED', 'b2_vinardo_final_results_2_model.pkl', 'b2_vinardo_final_results_2_clean.csv'),
+
+    # 4 MLP Models (New Highly Tuned)
+    ('AD4_MLP_PRED', 'b2_ad4_final_results_2_mlp_model_tuned.pkl', 'b2_ad4_final_results_2_clean.csv'),
+    ('DOCK6_MLP_PRED', 'b2_dock6_final_results_2_mlp_model_tuned.pkl', 'b2_dock6_final_results_2_clean.csv'),
+    ('VINA_MLP_PRED', 'b2_vina_final_results_2_mlp_model_tuned.pkl', 'b2_vina_final_results_2_clean.csv'),
+    ('VINARDO_MLP_PRED', 'b2_vinardo_final_results_2_mlp_model_tuned.pkl', 'b2_vinardo_final_results_2_clean.csv')
+]
+
+# Extract unique data file paths for initial alignment check
+DATA_FILES = list(set([item[2] for item in MODELS_TO_STACK]))
+
+COLUMNS_TO_DROP_IN_PREDICTION = ['Full_Name', 'Canonical_SMILES']
+
+# --- 1. ALIGN AND PREPARE ALL DATA ---
+print("--- Starting 8-Model Consensus Ensemble Stacking Process ---")
+print(f"Phase 1: Aligning {len(DATA_FILES)} unique datasets and preparing ground truth.")
+
+aligned_data_by_path = {}
+all_indices = None # This will hold the final common index (rows)
+initial_row_counts = {}
+
+# Loop over only the unique data files to find the common intersection
+for data_path in DATA_FILES:
+    print(f"Loading data from {data_path}...")
+
+    # Load and clean the raw data
+    df = pd.read_csv(data_path)
+    initial_row_counts[data_path] = len(df)
+
+    # CRITICAL CLEANING: ONLY drop rows with NA in the target variable
+    df.dropna(subset=[TARGET_COLUMN], inplace=True)
+
+    # Create the master index: Use both InChIKey and a synthetic pose rank
+    df['Pose_Rank'] = df.groupby('Standard_InChIKey').cumcount() + 1
+    df['Master_ID'] = df['Standard_InChIKey'] + "_" + df['Pose_Rank'].astype(str)
+
+    # Set Master_ID as index and store data
+    df.set_index('Master_ID', inplace=True)
+    aligned_data_by_path[data_path] = df
+
+    # Find the intersection of indices across all files
+    if all_indices is None:
+        all_indices = df.index
+    else:
+        # Intersect the current index with the running intersection
+        all_indices = all_indices.intersection(df.index)
+
+# Check if alignment was successful
+print(f"\nInitial row counts before alignment (Target Cleaned): {initial_row_counts}")
+print(f"Total aligned rows (Intersection of all 4 datasets): {len(all_indices)}")
+if len(all_indices) < 100:
+    print("CRITICAL WARNING: Intersection is too small for reliable stacking.")
+
+# --- 2. BUILD META-FEATURE MATRIX (8 COLUMNS) ---
+X_meta_features = {}
+y_meta_target = None
+
+print("\nPhase 2: Generating 8 Meta-Features (Predictions) from 8 Aligned Models...")
+
+for name, model_path, data_path in MODELS_TO_STACK:
+    # 1. Get the correct aligned DataFrame
+    df_aligned = aligned_data_by_path[data_path].loc[all_indices]
+
+    try:
+        # 2. Load the specific model (XGBoost or MLP)
+        model_pipeline = joblib.load(model_path)
+        print(f"Loaded {name} model from {model_path}.")
+    except Exception as e:
+        print(f"CRITICAL ERROR: Failed to load model {model_path}. Error: {e}")
+        exit()
+
+    # 3. Prepare features for prediction
+    X_predict = df_aligned.drop(columns=[TARGET_COLUMN] + COLUMNS_TO_DROP_IN_PREDICTION + ['Pose_Rank'], errors='ignore')
+
+    # Impute missing values with the median (consistent with MLP preprocessor)
+    # This must be done here, as the loaded pipeline expects clean input data.
+    # We impute here to avoid any issues with missing values in the feature matrix X_predict
+    # before it enters the preprocessor within the pipeline.
+    X_predict[X_predict.select_dtypes(include=np.number).columns] = X_predict.select_dtypes(include=np.number).fillna(X_predict.select_dtypes(include=np.number).median())
+    
+    # 4. Generate predictions (the meta-feature)
+    y_pred = model_pipeline.predict(X_predict).flatten()
+    X_meta_features[name] = y_pred
+
+    # Set the target (y_meta_target) based on the first aligned dataframe
+    if y_meta_target is None:
+        y_meta_target = df_aligned[TARGET_COLUMN]
+
+# Convert the meta-feature dictionary into the final training data (X_meta, y_meta)
+X_meta = pd.DataFrame(X_meta_features, index=all_indices)
+y_meta = y_meta_target
+
+print(f"\nMeta-Feature Matrix created. Total rows: {len(X_meta)}")
+print(f"Features are: {list(X_meta.columns)}")
+print(f"Total {len(X_meta.columns)} base model predictions will be used.")
+
+# --- 3. TRAIN AND EVALUATE META-MODEL ---
+
+if len(X_meta) < 100:
+    print("\n--- WARNING: SKIPPING FORMAL EVALUATION DUE TO INSUFFICIENT ALIGNED DATA ---")
+    print("The stacked model CANNOT be reliably evaluated with so few data points.")
+    exit()
+
+# Split data for Meta-Learner training and testing
+X_meta_train, X_meta_test, y_meta_train, y_meta_test = train_test_split(
+    X_meta, y_meta, test_size=TEST_SIZE, random_state=RANDOM_SEED
+)
+
+# Train Meta-Learner (RidgeCV is highly effective here as it finds the optimal weights)
+meta_learner = RidgeCV(alphas=np.logspace(-3, 1, 100))
+print("\nPhase 3: Training 8-feature Meta-Learner (RidgeCV) and evaluating...")
+meta_learner.fit(X_meta_train, y_meta_train)
+
+# Evaluation
+y_pred_stacked = meta_learner.predict(X_meta_test)
+rmse_stacked = np.sqrt(mean_squared_error(y_meta_test, y_pred_stacked))
+r2_stacked = r2_score(y_meta_test, y_pred_stacked)
+mae_stacked = mean_absolute_error(y_meta_test, y_pred_stacked)
+
+
+# --- 4. REPORT WEIGHTS AND METRICS ---
+print("\n" + "="*80)
+print("### FINAL CONSENSUS (STACKED) MODEL PERFORMANCE ###")
+print("="*80)
+print(f"Meta-Learner Target: {TARGET_COLUMN} (Experimental Binding Energy)")
+print(f"Meta-Learner Algorithm: Ridge Regressor")
+print("-" * 80)
+
+# Report Weights
+weights_df = pd.DataFrame({
+    'Model': X_meta.columns,
+    'Weight (Coefficient)': meta_learner.coef_.flatten()
+})
+weights_df['Weight (Coefficient)'] = weights_df['Weight (Coefficient)'].apply(lambda x: f"{x:.4f}")
+print("Base Model Weights (Coefficients):")
+print(weights_df.to_markdown(index=False))
+
+print("-" * 80)
+print(f"Final Test RMSE (Stacked Score): {rmse_stacked:.4f}")
+print(f"Final Test MAE (Stacked Score): {mae_stacked:.4f}")
+print(f"Final Test R2 (Stacked Score): {r2_stacked:.4f}")
+print("="*80)
+
+# Save the final stacking model for future predictions
+model_filename = "final_consensus_8model_stacking_model.pkl"
+joblib.dump(meta_learner, model_filename)
+print(f"\nFinal Consensus Model saved to: {model_filename}")
+print("The script successfully created the unique, combined prediction model.")
+
+```
+
+
+------------------------------------------------------------
+ Script: 06_web_deployment/web/app.py
+------------------------------------------------------------
+
+```python
+import os
+import sys
+import traceback
+import joblib
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+# 1. Setup paths relative to web/
+WEB_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.abspath(os.path.join(WEB_DIR, ".."))
+
+if PARENT_DIR not in sys.path:
+    sys.path.insert(0, PARENT_DIR)
+
+# 2. Import prediction_core
+try:
+    import prediction_core
+    print("[SUCCESS] Loaded prediction_core module successfully!")
+except Exception as e:
+    prediction_core = None
+    print(f"[ERROR] Failed to import prediction_core: {e}")
+
+# 3. Global variables for pre-loaded artifacts
+REF_MOL = None
+BASE_MODELS = None
+STACKED_MODEL = None
+
+
+def load_artifacts():
+    """Load reference molecule and model dicts into memory/GPU on startup."""
+    global REF_MOL, BASE_MODELS, STACKED_MODEL
+    if not prediction_core:
+        return
+
+    print("\n--- Pre-loading Models and Reference Artifacts into GPU/Memory ---")
+
+    # Set reference molecule path
+    if hasattr(prediction_core, "REFERENCE_MOL2"):
+        ref_path = prediction_core.REFERENCE_MOL2
+        REF_MOL = ref_path if os.path.isabs(ref_path) else os.path.abspath(os.path.join(PARENT_DIR, ref_path))
+    else:
+        REF_MOL = os.path.join(PARENT_DIR, "4tq_reference.mol2")
+
+    # Load Base Models (Dictionary of XGB and MLP models)
+    if hasattr(prediction_core, "BASE_MODEL_PATHS"):
+        BASE_MODELS = {}
+        for key, path in prediction_core.BASE_MODEL_PATHS.items():
+            full_path = path if os.path.isabs(path) else os.path.abspath(os.path.join(PARENT_DIR, path))
+            if os.path.exists(full_path):
+                BASE_MODELS[key] = joblib.load(full_path)
+            else:
+                print(f"[WARNING] Model file not found: {full_path}")
+    elif hasattr(prediction_core, "load_base_models"):
+        BASE_MODELS = prediction_core.load_base_models()
+
+    # Load Stacked Meta-Model
+    if hasattr(prediction_core, "STACKED_MODEL_PATH"):
+        stacked_path = prediction_core.STACKED_MODEL_PATH
+        full_stacked_path = stacked_path if os.path.isabs(stacked_path) else os.path.abspath(os.path.join(PARENT_DIR, stacked_path))
+        if not os.path.exists(full_stacked_path):
+            full_stacked_path = os.path.join(PARENT_DIR, "final_consensus_8model_stacking_model.pkl")
+        STACKED_MODEL = joblib.load(full_stacked_path)
+    elif hasattr(prediction_core, "load_stacked_model"):
+        STACKED_MODEL = prediction_core.load_stacked_model()
+
+    print(f"Reference Molecule Path: {REF_MOL}")
+    print(f"Loaded Base Models: {list(BASE_MODELS.keys()) if BASE_MODELS else 'None'}")
+    print(f"Stacked Meta-Model Loaded: {'Yes' if STACKED_MODEL is not None else 'No'}")
+    print("-------------------------------------------------------------------\n")
+
+
+# Perform initial artifact loading
+load_artifacts()
+
+app = Flask(__name__, static_folder=".", static_url_path="")
+CORS(app)
+
+
+@app.route("/")
+def index():
+    try:
+        return app.send_static_file("index.html")
+    except Exception as e:
+        return f"Error loading index.html: {str(e)}", 404
+
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        if not prediction_core:
+            return jsonify({"error": "prediction_core module is not loaded."}), 500
+
+        if "mol2_file" not in request.files:
+            return jsonify({"error": "No .mol2 file uploaded in request."}), 400
+
+        file = request.files["mol2_file"]
+        filename = file.filename
+
+        if not filename:
+            return jsonify({"error": "Invalid or empty filename."}), 400
+
+        # Save incoming MOL2 file temporarily
+        temp_dir = os.path.join(WEB_DIR, "temp_uploads")
+        os.makedirs(temp_dir, exist_ok=True)
+        saved_file_path = os.path.join(temp_dir, filename)
+        file.save(saved_file_path)
+
+        print(f"\n================= EXECUTING GPU INFERENCE: {filename} =================")
+
+        # Execute prediction
+        results = prediction_core.predict_consensus(
+            saved_file_path,
+            REF_MOL,
+            BASE_MODELS,
+            STACKED_MODEL
+        )
+
+        print("Raw results returned from predict_consensus:", results)
+
+        # Cleanup temporary uploaded file
+        if os.path.exists(saved_file_path):
+            os.remove(saved_file_path)
+
+        # Extract base_scores and final_score safely
+        base_scores = {}
+        final_score = 0.0
+
+        if isinstance(results, tuple):
+            if len(results) == 2:
+                base_scores, final_score = results
+            else:
+                final_score = results[0]
+        elif isinstance(results, dict):
+            base_scores = results.get("base_scores", {})
+            final_score = results.get("final_score", 0.0)
+
+        # If final_score came back as a dict or list, extract the raw value
+        if isinstance(final_score, dict):
+            final_score = list(final_score.values())[0]
+        elif isinstance(final_score, (list, tuple)):
+            final_score = final_score[0]
+
+        # Ensure dictionary values in base_scores are clean floats
+        clean_base_scores = {}
+        if isinstance(base_scores, dict):
+            for k, v in base_scores.items():
+                if isinstance(v, (list, tuple)):
+                    clean_base_scores[k] = float(v[0])
+                elif isinstance(v, dict):
+                    clean_base_scores[k] = float(list(v.values())[0])
+                else:
+                    clean_base_scores[k] = float(v)
+
+        response = {
+            "status": "success",
+            "filename": filename,
+            "base_scores": clean_base_scores,
+            "final_score": float(final_score)
+        }
+
+        print("GPU Inference Pipeline Completed Successfully!")
+        print("Response sent to frontend:", response)
+        print("======================================================================\n")
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        print("\n[ERROR] Exception caught during GPU model execution:")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    print("Starting STACPRED Flask server on http://0.0.0.0:8000...")
+    app.run(host="0.0.0.0", port=8000, debug=True)
+
+```

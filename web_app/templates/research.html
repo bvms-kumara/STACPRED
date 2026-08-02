@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STACPRED - Research & Validation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* KEYFRAME ANIMATION FOR BACKGROUND SHIFT (for body) */
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 0%;
+            }
+            50% {
+                background-position: 100% 100%;
+            }
+            100% {
+                background-position: 0% 0%;
+            }
+        }
+        
+        /* SUBTLE GLOW ANIMATION FOR PANELS */
+        @keyframes subtle-glow {
+            0%, 100% {
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            }
+            50% {
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(74, 144, 226, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            }
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            background-image: radial-gradient(at 0% 0%, #1a2a47 0px, transparent 40%),
+                              radial-gradient(at 100% 100%, #301747 0px, transparent 40%);
+            background-size: 150% 150%;
+            background-attachment: fixed;
+            animation: gradient-shift 30s ease infinite;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .glass-panel {
+            background-color: rgba(13, 17, 23, 0.75);
+            border: 1px solid rgba(48, 54, 61, 0.5);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            animation: subtle-glow 8s ease-in-out infinite;
+        }
+        
+        .page-card {
+            max-width: 1400px;
+            width: 95%;
+            margin: auto;
+        }
+        
+        code {
+            font-family: 'Space Mono', monospace;
+            background-color: #161b22;
+            color: #4a90e2; 
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        
+        .accordion-item { 
+            border: 1px solid #30363d; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            margin-bottom: 1rem;
+            transition: box-shadow 0.3s ease;
+        }
+        .accordion-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background-color: rgba(22, 27, 34, 0.8);
+            transition: background-color 0.2s;
+        }
+        .accordion-header:hover {
+            background-color: rgba(48, 54, 61, 0.5);
+        }
+        .accordion-content {
+            padding: 1.5rem;
+            border-top: 1px solid #30363d;
+            background-color: rgba(13, 17, 23, 0.9);
+            display: none;
+        }
+        .arrow {
+            transition: transform 0.3s;
+            font-size: 1.2rem;
+        }
+        .open .arrow {
+            transform: rotate(180deg);
+        }
+
+        .research-card-ml { border-left: 4px solid #3b82f6; }
+        .research-card-ml:hover { box-shadow: 0 0 10px #3b82f6/30; }
+        .research-card-chem { border-left: 4px solid #10b981; }
+        .research-card-chem:hover { box-shadow: 0 0 10px #10b981/30; }
+        .research-card-bio { border-left: 4px solid #a855f7; }
+        .research-card-bio:hover { box-shadow: 0 0 10px #a855f7/30; }
+    </style>
+</head>
+<body>
+    <div class="page-card space-y-12">
+        
+        <header class="flex flex-col md:flex-row items-start md:items-center justify-between border-b-2 border-blue-500 pb-5 pt-3">
+            <div class="flex items-start mb-3 md:mb-0">
+                <div class="p-3 bg-blue-600 rounded-xl mr-4 shadow-xl">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.22 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <h1 class="text-4xl font-extrabold text-blue-400 tracking-tight">
+                    STACPRED <span class="text-white font-light">| Research & Validation</span>
+                </h1>
+            </div>
+            
+            <div class="flex flex-col items-start md:items-end space-y-3">
+                <nav class="flex space-x-4 text-sm md:text-lg font-medium">
+                    <a href="/" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Console</a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/learn_more.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Learn More<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/developers.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Developers<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/about.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">About<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                </nav>
+            </div>
+        </header>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            
+            <div class="lg:col-span-2 glass-panel p-10">
+                <h2 class="text-3xl font-extrabold mb-8 border-b border-green-700 pb-3 text-white">
+                    <span class="text-green-400">🔥</span> Ongoing Research Projects (v3.0 Development)
+                </h2>
+
+
+
+                <div class="space-y-6">
+
+                    <div class="accordion-item glass-panel research-card-chem">
+                        <div class="accordion-header text-green-400 font-extrabold text-xl" onclick="toggleAccordion(this)">
+                            R.1: In Silico High-Throughput Screening for Novel Sirtuin Activators
+                            <span class="arrow">&#9660;</span>
+                        </div>
+                        <div class="accordion-content">
+                            <p class="text-gray-400 mb-4">Utilizing the highly efficient STACPRED ensemble to perform virtual screening against commercial databases (ZINC, PubChem) containing over 1 million compounds. The goal is to identify novel, structurally diverse **Sirtuin activators** outside of the known scaffold class for experimental validation.</p>
+                            <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="inline-flex items-center text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors">
+                                <i class="fab fa-youtube mr-2"></i> View Virtual Screening Methods
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item glass-panel research-card-bio">
+                        <div class="accordion-header text-purple-400 font-extrabold text-xl" onclick="toggleAccordion(this)">
+                            R.2: QM/MM Study of Sirtuin-1 Reaction Mechanism
+                            <span class="arrow">&#9660;</span>
+                        </div>
+                        <div class="accordion-content">
+                            <p class="text-gray-400 mb-4">Applying **Quantum Mechanics/Molecular Mechanics (QM/MM)** hybrid simulations to model the bond-breaking and formation steps in the <code class="text-purple-300">Sirtuin-1</code> deacetylation reaction. This deep computational study aims to identify key catalytic residues and the energy barriers involved, informing future drug design efforts targeting the enzyme mechanism directly.</p>
+                            <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="inline-flex items-center text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors">
+                                <i class="fab fa-youtube mr-2"></i> Watch QM/MM Theory Talk
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item glass-panel research-card-ml">
+                        <div class="accordion-header text-blue-400 font-extrabold text-xl" onclick="toggleAccordion(this)">
+                            R.3: STACPRED v3 Development - Integrating GCN and Robust OOD Detection
+                            <span class="arrow">&#9660;</span>
+                        </div>
+                        <div class="accordion-content">
+                            <p class="text-gray-400 mb-4">The next generation model focuses on two key upgrades: **Graph Convolutional Networks (GCNs)** for superior feature extraction from molecular topology, and implementing a strict **Tanimoto Similarity** filter to ensure all predictions fall within the model's reliable domain (Out-of-Domain prevention).</p>
+                            <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="inline-flex items-center text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors">
+                                <i class="fab fa-youtube mr-2"></i> GCN and Stacking Architecture
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 space-y-8">
+                
+                <div class="glass-panel p-6 shadow-xl border-t-4 border-blue-500">
+                    <h3 class="text-xl font-bold mb-5 border-b border-gray-700 pb-2 text-white">Model Validation Summary</h3>
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="p-3 bg-gray-800 rounded-lg border border-green-600">
+                            <p class="text-3xl font-extrabold text-green-400">0.9154</p>
+                            <p class="text-xs font-semibold text-gray-400 mt-1">Ensemble <code class="text-xs">R²</code></p>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg border border-purple-600">
+                            <p class="text-3xl font-extrabold text-purple-400">0.390</p>
+                            <p class="text-xs font-semibold text-gray-400 mt-1">RMSE (kcal/mol)</p>
+                        </div>
+                        <div class="p-3 bg-gray-800 rounded-lg border border-red-600">
+                            <p class="text-3xl font-extrabold text-red-400">±1.0</p>
+                            <p class="text-xs font-semibold text-gray-400 mt-1">MAE (kcal/mol)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 shadow-xl border-t-4 border-purple-500">
+                    <h3 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2 text-white">8-Model Breakdown (L0)</h3>
+                    <div class="max-h-96 overflow-y-auto pr-2">
+                        <div class="space-y-2">
+                            
+                            <div class="accordion-item research-card-ml border-l-4">
+                                <div class="accordion-header text-green-400 font-semibold text-sm py-2 px-3" onclick="toggleAccordion(this)">
+                                    VINA_XGB (0.9080)
+                                    <span class="arrow">&#9660;</span>
+                                </div>
+                                <div class="accordion-content">
+                                    <p class="text-xs text-gray-400">Alg: **XGBoost**, Feat: Vina Score / ECFP4. Highest individual $\mathbf{R}^2$.</p>
+                                </div>
+                            </div>
+                            <div class="accordion-item research-card-ml border-l-4">
+                                <div class="accordion-header text-purple-400 font-semibold text-sm py-2 px-3" onclick="toggleAccordion(this)">
+                                    VINA_MLP (0.9057)
+                                    <span class="arrow">&#9660;</span>
+                                </div>
+                                <div class="accordion-content">
+                                    <p class="text-xs text-gray-400">Alg: **MLP**, Feat: Vina Score / ECFP4. Neural Network counterpart.</p>
+                                </div>
+                            </div>
+                            <div class="accordion-item research-card-ml border-l-4">
+                                <div class="accordion-header text-green-400 font-semibold text-sm py-2 px-3" onclick="toggleAccordion(this)">
+                                    AD4_XGB (0.6910)
+                                    <span class="arrow">&#9660;</span>
+                                </div>
+                                <div class="accordion-content">
+                                    <p class="text-xs text-gray-400">Alg: **XGBoost**, Feat: AutoDock4 Score / 2D Descriptors.</p>
+                                </div>
+                            </div>
+                            <div class="accordion-item research-card-ml border-l-4">
+                                <div class="accordion-header text-purple-400 font-semibold text-sm py-2 px-3" onclick="toggleAccordion(this)">
+                                    AD4_MLP (0.4815)
+                                    <span class="arrow">&#9660;</span>
+                                </div>
+                                <div class="accordion-content">
+                                    <p class="text-xs text-gray-400">Alg: **MLP**, Feat: AutoDock4 Score / 2D Descriptors.</p>
+                                </div>
+                            </div>
+                            <div class="accordion-item research-card-ml border-l-4">
+                                <div class="accordion-header text-green-400 font-semibold text-sm py-2 px-3" onclick="toggleAccordion(this)">
+                                    VINARDO_XGB (0.6001)
+                                    <span class="arrow">&#9660;</span>
+                                </div>
+                                <div class="accordion-content">
+                                    <p class="text-xs text-gray-400">Alg: **XGBoost**, Feat: Vinardo Score / Pharmacophore.</p>
+                                </div>
+                            </div>
+                            <div class="accordion-item research-card-ml border-l-4">
+                                <div class="accordion-header text-purple-400 font-semibold text-sm py-2 px-3" onclick="toggleAccordion(this)">
+                                    VINARDO_MLP (0.6037)
+                                    <span class="arrow">&#9660;</span>
+                                </div>
+                                <div class="accordion-content">
+                                    <p class="text-xs text-gray-400">Alg: **MLP**, Feat: Vinardo Score / Pharmacophore.</p>
+                                </div>
+                            </div>
+                            <div class="accordion-item research-card-ml border-l-4">
+                                <div class="accordion-header text-green-400 font-semibold text-sm py-2 px-3" onclick="toggleAccordion(this)">
+                                    DOCK6_XGB (0.4505)
+                                    <span class="arrow">&#9660;</span>
+                                </div>
+                                <div class="accordion-content">
+                                    <p class="text-xs text-gray-400">Alg: **XGBoost**, Feat: DOCK6 Score / Hybrid Descriptors.</p>
+                                </div>
+                            </div>
+                            <div class="accordion-item research-card-ml border-l-4">
+                                <div class="accordion-header text-purple-400 font-semibold text-sm py-2 px-3" onclick="toggleAccordion(this)">
+                                    DOCK6_MLP (0.3850)
+                                    <span class="arrow">&#9660;</span>
+                                </div>
+                                <div class="accordion-content">
+                                    <p class="text-xs text-gray-400">Alg: **MLP**, Feat: DOCK6 Score / Hybrid Descriptors.</p>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+    <script>
+        function toggleAccordion(header) {
+            const item = header.closest('.accordion-item');
+            const content = item.querySelector('.accordion-content');
+            const arrow = header.querySelector('.arrow');
+            
+            const is_open = content.style.display === 'block';
+            
+            document.querySelectorAll('.accordion-item').forEach(otherItem => {
+                const otherContent = otherItem.querySelector('.accordion-content');
+                const otherArrow = otherItem.querySelector('.arrow');
+                
+                if (otherItem !== item) {
+                    otherContent.style.display = 'none';
+                    otherItem.classList.remove('open');
+                    if (otherArrow) otherArrow.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            if (is_open) {
+                content.style.display = 'none';
+                item.classList.remove('open');
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'block';
+                item.classList.add('open');
+                arrow.style.transform = 'rotate(180deg)';
+            }
+        }
+    </script>
+</body>
+</html>
+

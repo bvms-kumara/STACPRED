@@ -1,0 +1,56 @@
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-11-05 10:50:05                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_vinardo_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (25808, 2086)
+After Drop NA (Target only)        : (25808, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 18064.0000
+Validation                         : 3872.0000
+Test                               : 3872.0000
+
+----------------------------------------
+| MLP_CONFIGURATION |
+----------------------------------------
+Hidden Layers                      : (256, 128, 64, 32)
+Activation                         : relu
+Solver                             : adam
+Max Iterations                     : 3000.0000
+Learning Rate Init                 : 0.0008
+Alpha (L2)                         : 0.0010
+Tolerance (tol)                    : 0.0000
+Early Stopping                     : 1.0000
+Imputation Strategy (Numeric)      : median
+Imputation Strategy (Categorical)  : constant (missing)
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(0.4963037559393606), 0.34310739468044216, 0.5828760335242837)
+Test RMSE/MAE/R2                   : (np.float64(0.4884644931711114), 0.34299163195253807, 0.6037062118772517)
+CV 5-fold RMSE                     : [0.4991, 0.4950, 0.5077, 0.4519, 0.5103]
+CV Mean RMSE                       : 0.4928
+CV Std RMSE                        : 0.0212
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_vinardo_final_results_2_mlp_model_tuned.pkl
+

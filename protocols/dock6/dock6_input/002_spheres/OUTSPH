@@ -1,0 +1,10 @@
+ density type = X
+ reading  ./4ZZJ.dms                                                                         type   R
+ # of atoms =   5580   # of surf pts =  42430
+ finding spheres for   ./4ZZJ.dms                                                                      
+ dotlim =     0.000
+ radmax =    4.000
+ Minimum radius of acceptable spheres?
+   1.4000000
+ output to  4ZZJ.sph                                                                        
+ clustering is complete    131  clusters

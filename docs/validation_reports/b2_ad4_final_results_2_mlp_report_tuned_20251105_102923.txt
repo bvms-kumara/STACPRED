@@ -1,0 +1,56 @@
+================================================================================
+                      MODEL TRAINING AND EVALUATION REPORT                      
+                       Generated on: 2025-11-05 10:29:23                        
+================================================================================
+
+----------------------------------------
+| CONFIGURATION |
+----------------------------------------
+File Path                          : b2_ad4_final_results_2_clean.csv
+Target Column                      : Binding_Energy
+Random Seed                        : 42.0000
+Test Size                          : 0.1500
+Validation Size                    : 0.1500
+N_Jobs                             : -1.0000
+
+----------------------------------------
+| DATASET_INFO |
+----------------------------------------
+Initial Rows/Columns               : (28724, 2086)
+After Drop NA (Target only)        : (28724, 2084)
+
+----------------------------------------
+| DATA_SPLIT_SIZES |
+----------------------------------------
+Training                           : 20106.0000
+Validation                         : 4309.0000
+Test                               : 4309.0000
+
+----------------------------------------
+| MLP_CONFIGURATION |
+----------------------------------------
+Hidden Layers                      : (256, 128, 64, 32)
+Activation                         : relu
+Solver                             : adam
+Max Iterations                     : 3000.0000
+Learning Rate Init                 : 0.0008
+Alpha (L2)                         : 0.0010
+Tolerance (tol)                    : 0.0000
+Early Stopping                     : 1.0000
+Imputation Strategy (Numeric)      : median
+Imputation Strategy (Categorical)  : constant (missing)
+
+----------------------------------------
+| TRAINING_METRICS |
+----------------------------------------
+Validation RMSE/MAE/R2             : (np.float64(0.7548675447414492), 0.576491146401682, 0.4982885317536917)
+Test RMSE/MAE/R2                   : (np.float64(0.7631160490123153), 0.5903848701977434, 0.4814502678809214)
+CV 5-fold RMSE                     : [0.7669, 0.7523, 0.7659, 0.7276, 0.7660]
+CV Mean RMSE                       : 0.7558
+CV Std RMSE                        : 0.0151
+
+----------------------------------------
+| MODEL_SAVE |
+----------------------------------------
+Filename                           : b2_ad4_final_results_2_mlp_model_tuned.pkl
+

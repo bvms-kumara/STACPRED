@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <ti<title>STACPRED - Developer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> 
+
+<style>
+/* (same CSS as before — unchanged) */
+@keyframes gradient-shift {0%{background-position:0% 0%;}50%{background-position:100% 100%;}100%{background-position:0% 0%;}}
+@keyframes subtle-glow {0%,100%{box-shadow:0 10px 30px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.05);}50%{box-shadow:0 10px 30px rgba(0,0,0,0.7),0 0 20px rgba(74,144,226,0.15),0 0 0 1px rgba(255,255,255,0.08);}}
+body{font-family:'Inter',sans-serif;background-color:#0d1117;color:#c9d1d9;min-height:100vh;background-image:radial-gradient(at 0% 0%,#1a2a47 0px,transparent 40%),radial-gradient(at 100% 100%,#301747 0px,transparent 40%);background-size:150% 150%;background-attachment:fixed;animation:gradient-shift 30s ease infinite;display:flex;justify-content:center;padding:2rem;}
+.page-card{max-width:1400px;width:95%;margin:auto;}
+.glass-panel{background-color:rgba(13,17,23,0.7);border:1px solid rgba(48,54,61,0.5);backdrop-filter:blur(12px);border-radius:16px;animation:subtle-glow 8s ease-in-out infinite;}
+code{font-family:'Space Mono',monospace;background-color:#161b22;color:#4a90e2;padding:2px 4px;border-radius:4px;}
+.drop-zone{border:3px dashed #30363d;transition:all 0.3s ease;}
+.drop-zone:hover,.drop-zone-active{border-color:#58a6ff;background-color:rgba(88,166,255,0.08);}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(88,166,255,0.5);}50%{box-shadow:0 0 10px 6px rgba(88,166,255,0.9);}}
+.active-pulse{animation:pulse 1.2s cubic-bezier(0.4,0,0.6,1) infinite;}
+.warning-red-glow{box-shadow:0 0 25px rgba(255,60,60,0.8)!important;border-color:#ff3c3c!important;}
+.shimmer-button{position:relative;overflow:hidden;}
+.shimmer-button::after{content:'';position:absolute;top:0;transform:translateX(-100%) skewX(-30deg);width:50%;height:100%;background:rgba(255,255,255,0.15);transition:all 0.5s;}
+.shimmer-button:hover::after{transform:translateX(200%) skewX(-30deg);transition:all 0.5s;}
+.model-xgb{background-color:#10b981;}
+.model-mlp{background-color:#a855f7;}
+</style>
+</head>
+<body>
+    <div class="page-card space-y-12">
+
+        <header class="flex flex-col md:flex-row items-start md:items-center justify-between border-b-2 border-blue-500 pb-5 pt-3">
+            <div class="flex items-start mb-3 md:mb-0">
+                <div class="p-3 bg-blue-600 rounded-xl mr-4 shadow-xl">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                </div>
+                <h1 class="text-4xl font-extrabold text-blue-400 tracking-tight">
+                    STACPRED <span class="text-white font-light">| Developer</span>
+                </h1>
+            </div>
+            
+            <div class="flex flex-col items-start md:items-end space-y-3">
+                <nav class="flex space-x-4 text-sm md:text-lg font-medium">
+                    <a href="/" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Console</a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/learn_more.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Learn More<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/research.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Research<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/about.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">About<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                </nav>
+            </div>
+        </header>
+
+        <div class="glass-panel p-10 space-y-10">
+            <h2 class="text-3xl font-bold border-b border-gray-700 pb-3 text-white">Meet the Developer</h2>
+
+            <div class="grid grid-cols-1 gap-10">
+                
+                <!-- MALAKA SECTION -->
+                <div class="dev-card glass-panel p-8 border-l-4 border-green-500 shadow-xl hover:shadow-green-500/30">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-x-0 sm:space-x-6 mb-6">
+                        <div class="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center mb-4 sm:mb-0 shrink-0">
+                            <img src="{{ url_for('static', filename='images/dev_photo_malaka.jpg') }}" alt="Malaka Sandaruwan" class="w-full h-full rounded-full object-cover border-4 border-green-500 shadow-2xl">
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-extrabold role-ml">Malaka Sandaruwan</h3>
+                            <p class="text-lg text-gray-400 font-medium">Principal Investigator / BPharm</p>
+                            <div class="flex space-x-5 mt-3">
+                                <a href="https://github.com/bvms-kumara" target="_blank" class="icon-link" aria-label="GitHub"><i class="fab fa-github fa-xl"></i></a>
+                                <a href="https://www.linkedin.com/in/malaka-sandaruwan-6674561b7/" target="_blank" class="icon-link" aria-label="LinkedIn"><i class="fab fa-linkedin fa-xl"></i></a>
+                                <a href="mailto:malakasanadruwan201023@gmail.com" class="icon-link" aria-label="Email"><i class="fas fa-envelope fa-xl"></i></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-md text-gray-300 border-t border-gray-700 pt-4">
+                        This project is driven by my <strong>curiosity and interest in the endless possibilities</strong> at the intersection of <strong>Pharmacy</strong> and <strong>Machine Learning</strong>. As an undergraduate student of the <strong>Bachelor of Pharmacy program at General Sir John Kotelawala Defence University, Sri Lanka</strong>, my goal is to <strong>contribute to the scientific community</strong> by developing transparent, high-accuracy tools. This work utilizes modern generative AI assistants (like Gemini and ChatGPT) for architectural insights and script refinement, blending domain knowledge with advanced computational methods.
+                    </p>
+
+                    <h4 class="text-xl font-extrabold text-green-400 mt-6 mb-3">Technical Contributions to STACPRED</h4>
+                    <ul class="text-sm text-gray-300 list-disc ml-4 space-y-2">
+                        <li><strong>Architectural Lead:</strong> Designed the foundational <strong>8-model Stacking Ensemble</strong> to minimize prediction variance and maximize R² score.</li>
+                        <li><strong>Feature Engineering:</strong> Implemented the robust <strong>2000+ feature pipeline</strong>, integrating <strong>4 distinct docking results (AD4, Vina, etc.)</strong> with comprehensive ECFP4 and 3D structural metrics.</li>
+                        <li><strong>Model Optimization:</strong> Hand-tuned the hyperparameters for both the deep <strong>MLP (256, 128, 64, 32)</strong> and the high-capacity <strong>XGBoost (low-rate, max-depth 9)</strong> pipelines.</li>
+                        <li><strong>Deployment Ready:</strong> Implemented the prediction workflow logic for seamless, single-input, low-latency scoring for a potential RESTful API integration.</li>
+                    </ul>
+
+                    <p class="text-sm font-semibold text-white bg-gray-700 p-2 rounded-md mt-6 text-center">
+                        <strong>Open to collaborate and learn more!</strong> Connect with me to discuss future projects in computational pharmacology.
+                    </p>
+                </div>
+
+
+            </div>
+
+            <div class="pt-8">
+                <h3 class="text-2xl font-bold mb-4 text-blue-400">Core Technology Stack</h3>
+                <div class="flex flex-wrap gap-4 text-sm font-semibold text-gray-300">
+                    <span class="bg-gray-800/80 px-4 py-2 rounded-full border border-green-600 flex items-center"><i class="fab fa-python mr-2 text-green-400"></i> Python (Backend)</span>
+                    <span class="bg-gray-800/80 px-4 py-2 rounded-full border border-yellow-600 flex items-center"><i class="fas fa-cube mr-2 text-yellow-400"></i> Scikit-learn / XGBoost</span>
+                    <span class="bg-gray-800/80 px-4 py-2 rounded-full border border-blue-600 flex items-center"><i class="fas fa-server mr-2 text-blue-400"></i> Flask REST API</span>
+                    <span class="bg-gray-800/80 px-4 py-2 rounded-full border border-red-600 flex items-center"><i class="fas fa-magic mr-2 text-red-400"></i> RDKit (Cheminformatics)</span>
+                    <span class="bg-gray-800/80 px-4 py-2 rounded-full border border-gray-600 flex items-center"><i class="fab fa-html5 mr-2 text-orange-400"></i> HTML5/Tailwind CSS (Frontend)</span>
+                </div>
+            </div>
+
+        </div>
+        
+    </div>
+</body>
+</html>
+

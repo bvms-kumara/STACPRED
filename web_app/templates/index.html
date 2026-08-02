@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STACPRED - Advanced Prediction Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* KEYFRAME ANIMATION FOR BACKGROUND SHIFT */
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 0%;
+            }
+            50% {
+                background-position: 100% 100%;
+            }
+            100% {
+                background-position: 0% 0%;
+            }
+        }
+
+        /* BASE STYLES & FONT */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Deep Slate Background */
+            color: #c9d1d9;
+            min-height: 100vh;
+            
+            /* Cosmic Gradient Background */
+            background-image: radial-gradient(at 0% 0%, #1a2a47 0px, transparent 40%),
+                              radial-gradient(at 100% 100%, #301747 0px, transparent 40%);
+            
+            /* Enable Animation */
+            background-size: 150% 150%;
+            background-attachment: fixed;
+            animation: gradient-shift 30s ease infinite;
+            
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* Page Card for consistent centering and max width */
+        .page-card {
+            max-width: 1400px;
+            width: 95%;
+            margin: auto;
+        }
+
+        /* GLASS PANEL - Glassmorphism */
+        .glass-panel {
+            background-color: rgba(13, 17, 23, 0.7);
+            border: 1px solid rgba(48, 54, 61, 0.5); 
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+        }
+        
+        /* MONOSPACE CODE */
+        code {
+            font-family: 'Space Mono', monospace;
+            background-color: #161b22;
+            color: #4a90e2;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        /* DROP ZONE */
+        .drop-zone {
+            border: 3px dashed #30363d;
+            transition: all 0.3s ease;
+        }
+        .drop-zone:hover, .drop-zone-active {
+            border-color: #58a6ff; 
+            background-color: rgba(88, 166, 255, 0.08);
+        }
+        
+        /* PREDICTION ANIMATION (PULSE - Blue/Success) */
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.5); }
+            50% { box-shadow: 0 0 10px 6px rgba(88, 166, 255, 0.9); }
+        }
+        .active-pulse {
+            animation: pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* OOD WARNING GLOW */
+        .warning-red-glow {
+            box-shadow: 0 0 25px rgba(255, 60, 60, 0.8) !important;
+            border-color: #ff3c3c !important;
+        }
+        
+        /* BUTTON ANIMATION: Shimmer Effect */
+        .shimmer-button {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer-button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            transform: translateX(-100%) skewX(-30deg);
+            width: 50%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            transition: all 0.5s;
+        }
+        .shimmer-button:hover::after {
+            transform: translateX(200%) skewX(-30deg);
+            transition: all 0.5s;
+        }
+
+        /* Model Bar Colors */
+        .model-xgb { background-color: #10b981; }
+        .model-mlp { background-color: #a855f7; }
+    </style>
+</head>
+<body>
+    
+    <div class="page-card space-y-12">
+        
+        <header class="flex flex-col md:flex-row items-start md:items-center justify-between border-b-2 border-blue-500 pb-5 pt-3">
+            
+            <div class="flex items-start mb-4 md:mb-0">
+                <div class="p-3 bg-blue-600 rounded-xl mr-4 shadow-xl">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1v-3m-6 0h6m-5-5a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2zM9 9l3 3 3-3m-4.5 0a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"></path></svg>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-4xl font-extrabold text-blue-400 tracking-tighter">
+                        STACPRED <span class="text-white font-light">Console</span>
+                    </h1>
+                    <p class="text-md text-gray-400 font-light mt-1">
+                        High-Confidence Affinity Prediction for SIRT1 Allosteric Activator Ligands.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-start md:items-end space-y-3">
+                <span class="text-xs font-semibold text-green-400 bg-gray-800 px-3 py-1 rounded-full border border-green-700 shadow-md">
+                    v2.0.0 | 8-Model Stack (<code class="text-green-300">R²=0.9154</code>)
+                </span>
+                
+                <nav class="flex space-x-4 text-sm md:text-lg font-medium">
+                    <a href="/learn_more.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Learn More<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/developers.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Developers<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/research.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">Research<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/about.html" class="text-blue-400 hover:text-blue-200 transition-colors duration-150 relative group">About<span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span></a>
+                </nav>
+            </div>
+        </header>
+
+        <div class="main-card glass-panel p-6 md:p-10 shadow-2xl transition-all duration-500 w-full">
+            
+            <div id="status-alert" class="hidden p-4 mb-6 rounded-lg text-white font-bold text-center border-2 transition-all duration-300" role="alert"></div>
+
+            <div class="bg-gray-800 border-l-4 border-blue-500 p-4 mb-8 rounded-md text-sm text-gray-300 shadow-xl transition-shadow duration-300 hover:shadow-blue-500/30">
+                <p><strong class="font-bold text-blue-400">STATUS:</strong> Backend Endpoint: <code id="api-endpoint-display" class="text-blue-300">/predict</code> is active (Relative Path).</p>
+                <p>Context: Only upload small molecules <code class="text-gray-400">(MW below 500 Da)</code>. The model was trained on such compounds.</p>
+            </div>
+
+            <div class="grid grid-cols-12 gap-8">
+                
+                <!-- LEFT COLUMN: INPUT CONSOLE & LIVE MOLECULAR PROFILE -->
+                <div class="col-span-12 lg:col-span-4 space-y-6">
+                    
+                    <!-- UPLOAD PANEL -->
+                    <div class="p-8 glass-panel shadow-2xl transition-all duration-300 hover:shadow-blue-500/50">
+                        <h3 class="text-2xl font-bold mb-6 border-b border-blue-500 pb-3 text-white">
+                            <span class="text-blue-400">INPUT</span> CONSOLE
+                        </h3>
+                        
+                        <form id="uploadForm" class="space-y-6">
+                            
+                            <!-- REFERENCE MOLECULE SELECTOR DROPDOWN -->
+                            <div>
+                                <label for="ref_choice" class="block text-sm font-semibold text-gray-300 tracking-wider mb-2">
+                                    Alignment Reference Structure
+                                </label>
+                                <select id="ref_choice" name="ref_choice" 
+                                    class="w-full bg-gray-900/80 border border-gray-700 text-blue-300 font-mono text-sm rounded-xl p-3 focus:outline-none focus:border-blue-500 shadow-inner">
+                                    <option value="4tq_reference">4tq_reference.mol2 (Default Crystal Template)</option>
+                                </select>
+                            </div>
+
+                            <!-- TARGET MOL2 FILE UPLOAD -->
+                            <div>
+                                <label for="mol2_upload" class="block text-sm font-semibold text-gray-300 tracking-wider mb-2">
+                                    Target Molecule (<code class="text-sm">.MOL2</code> File)
+                                </label>
+                                
+                                <div id="drop-zone" class="drop-zone flex flex-col items-center justify-center p-10 rounded-2xl cursor-pointer bg-gray-900/40">
+                                    <svg class="w-12 h-12 mb-3 text-blue-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                    <p id="drop-text" class="mb-2 text-sm text-gray-400 text-center">
+                                        <span class="font-bold text-blue-300">Click to upload</span> or drag and drop.
+                                    </p>
+                                    <input id="mol2_upload" type="file" name="mol2_file" class="hidden" accept=".mol2" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="submit-button" disabled
+                                class="shimmer-button w-full px-6 py-4 text-lg border border-transparent font-extrabold rounded-xl shadow-2xl text-white transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+                            >
+                                Initiate Ensemble Prediction
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- NEW LIVE MOLECULAR PROFILE & ALIGNMENT DIAGNOSTICS CARD -->
+                    <div class="p-6 glass-panel shadow-2xl transition-all duration-300">
+                        <h3 class="text-xl font-bold mb-4 border-b border-blue-500 pb-2 text-white flex items-center justify-between">
+                            <span><span class="text-blue-400">MOLECULAR</span> PROFILE</span>
+                            <span id="prof-feat-count" class="text-xs text-green-400 font-mono font-normal">-- Features</span>
+                        </h3>
+                        
+                        <div id="profile-placeholder" class="text-center text-gray-500 py-8 text-sm italic">
+                            Awaiting molecule prediction to populate profile properties...
+                        </div>
+
+                        <div id="profile-details" class="hidden space-y-4 text-xs font-mono">
+                            <!-- Physicochemical Properties Grid -->
+                            <div class="bg-gray-900/60 p-3.5 rounded-xl border border-gray-800 space-y-2">
+                                <div class="text-blue-400 font-bold tracking-wider text-[11px] uppercase mb-1 border-b border-gray-800 pb-1">
+                                    Basic Physicochemical Properties
+                                </div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Canonical SMILES:</span><span id="prof-smiles" class="text-blue-300 truncate max-w-[160px]" title="">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Molecular Weight:</span><span id="prof-mw" class="text-white font-bold">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Lipophilic Index:</span><span id="prof-logp" class="text-white">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Polar Surface Area:</span><span id="prof-tpsa" class="text-white">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">H-Bond Donor/Accept:</span><span id="prof-hbdhba" class="text-white">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Conformational Flex:</span><span id="prof-rotb" class="text-white">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Net Formal Charge:</span><span id="prof-charge" class="text-white">--</span></div>
+                            </div>
+
+                            <!-- Structural Alignment Engine Box -->
+                            <div class="bg-gray-900/60 p-3.5 rounded-xl border border-gray-800 space-y-2">
+                                <div class="text-emerald-400 font-bold tracking-wider text-[11px] uppercase mb-1 border-b border-gray-800 pb-1 flex justify-between">
+                                    <span>Alignment Engine</span>
+                                    <span id="prof-ls-status" class="text-green-400 font-bold">--</span>
+                                </div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Reference Template:</span><span id="prof-ref" class="text-blue-300 truncate max-w-[160px]">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Alignment RMSD:</span><span id="prof-rmsd" class="text-white font-bold">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Center-of-Mass Dist:</span><span id="prof-com" class="text-white">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Query / Templ Size:</span><span id="prof-size" class="text-white">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">PC-Score (Query):</span><span id="prof-pcq" class="text-white">--</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-400">Jaccard Overlap:</span><span id="prof-jaccard" class="text-white">--</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT COLUMN: ENSEMBLE FLOW & BREAKDOWN -->
+                <div class="col-span-12 lg:col-span-8 space-y-8">
+
+                    <div class="p-8 glass-panel shadow-2xl h-full min-h-[750px] relative">
+                        <h3 class="text-2xl font-bold mb-6 border-b border-gray-700 pb-3 text-white flex items-center justify-between">
+                            <span><span class="text-green-400">ENSEMBLE</span> FLOW & ANALYSIS</span>
+                            <span class="text-xs text-gray-400 font-mono font-normal">Stacking Meta-Learner + 8 Base Models</span>
+                        </h3>
+                        
+                        <div id="flow-container" class="hidden">
+                            
+                            <!-- STEP 1: MOLECULE INGESTION -->
+                            <div id="input-box" class="flex items-center justify-center h-14 mb-4 bg-gray-800 border border-blue-500 rounded-xl transition-all duration-500 shadow-lg hover:shadow-blue-500/50">
+                                <span class="text-xl font-bold text-white tracking-wide">
+                                    1. MOLECULE INGESTION: <code id="flow-filename" class="text-blue-400">Awaiting File...</code>
+                                </span>
+                            </div>
+
+                            <!-- STEP 2: FEATURE EXTRACTION -->
+                            <div id="processing-box" class="flex items-center justify-center h-8 mb-6 border-b-4 border-dashed border-gray-700/50">
+                                <span class="text-sm text-gray-500 italic px-4 py-1 bg-gray-800 rounded-full">2. FEATURE EXTRACTION & Normalization...</span>
+                            </div>
+
+                            <!-- STEP 3: MAIN RESULT (RIDGE CV CONSENSUS SCORE AT TOP) -->
+                            <div class="flex flex-col items-center justify-center mb-8">
+                                <div class="text-md text-gray-400 mb-2 font-semibold uppercase tracking-wider">
+                                    3. Meta-Model Fusion (RidgeCV Stacked Consensus) <span class="text-green-400">▼</span>
+                                </div>
+                                <div id="meta-model-box" class="w-full glass-panel p-8 rounded-2xl text-center border-4 border-blue-500 transition-all duration-500 shadow-xl">
+                                    <div class="text-2xl font-bold text-blue-400 tracking-widest uppercase">FINAL CONSENSUS SCORE</div>
+                                    <p id="final-score" class="text-7xl font-extrabold text-white mt-4 transition-all duration-700 animate-shimmer">--</p>
+                                    <p class="text-sm text-gray-500 mt-3">Stack R²: 0.9154 | File: <code id="flow-result-filename" class="font-medium text-gray-400">--</code></p>
+                                </div>
+                            </div>
+
+                            <!-- STEP 4: BASE ESTIMATORS BREAKDOWN (8 MODELS BELOW) -->
+                            <div class="border-t border-gray-700/70 pt-6">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h4 class="text-lg font-bold text-gray-300 uppercase tracking-wider">
+                                        4. Base Estimator Breakdown & Model Contributions
+                                    </h4>
+                                    <span class="text-xs text-gray-500 font-mono">Individual Base Estimators</span>
+                                </div>
+
+                                <!-- CARD TEMPLATE FOR SINGLE-COLUMN ROWS -->
+                                <template id="model-template">
+                                    <div class="glass-panel p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 model-card border border-gray-700 transition-all duration-300 shadow-md hover:border-blue-500/50">
+                                        <div class="flex items-center space-x-3 w-full md:w-5/12">
+                                            <span data-id="badge" class="px-2.5 py-1 text-xs font-bold rounded-md uppercase tracking-wider"></span>
+                                            <div>
+                                                <div data-id="dock-engine" class="text-sm font-extrabold text-white"></div>
+                                                <div data-id="name" class="text-xs text-gray-400 font-mono"></div>
+                                            </div>
+                                        </div>
+                                        <div class="w-full md:w-4/12">
+                                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                                <span>Validation Accuracy</span>
+                                                <span data-id="r2-label" class="font-mono text-gray-300"></span>
+                                            </div>
+                                            <div class="h-2.5 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+                                                <div class="model-bar h-full transition-all duration-700 ease-out" data-id="bar" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right w-full md:w-3/12">
+                                            <div data-id="score" class="text-sm font-bold text-blue-300 font-mono">Score: N/A</div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- SECTION 1: EXTREME GRADIENT BOOSTING (XGBOOST) -->
+                                <div class="mb-8">
+                                    <div class="flex items-center space-x-2 mb-3 border-b border-emerald-500/30 pb-2">
+                                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                        <h5 class="text-md font-bold text-emerald-400 tracking-wide uppercase">
+                                            Extreme Gradient Boosting (XGBoost) Base Estimators
+                                        </h5>
+                                        <span class="text-xs text-gray-500 font-mono pl-2">(Tree-Based Gradient Ensembles)</span>
+                                    </div>
+                                    <div id="xgb-model-grid" class="grid grid-cols-1 gap-3"></div>
+                                </div>
+
+                                <!-- SECTION 2: MULTI-LAYER PERCEPTRON (MLP) -->
+                                <div class="mb-4">
+                                    <div class="flex items-center space-x-2 mb-3 border-b border-purple-500/30 pb-2">
+                                        <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+                                        <h5 class="text-md font-bold text-purple-400 tracking-wide uppercase">
+                                            Multi-Layer Perceptron (MLP) Deep Neural Networks
+                                        </h5>
+                                        <span class="text-xs text-gray-500 font-mono pl-2">(Deep Feedforward Neural Networks)</span>
+                                    </div>
+                                    <div id="mlp-model-grid" class="grid grid-cols-1 gap-3"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                        
+                        <div id="initial-message" class="text-center text-gray-500 py-32">
+                            <p class="text-2xl font-light">
+                                <span class="text-blue-400 font-bold">STACPRED Engine Ready.</span> 
+                            </p>
+                            <p class="text-lg mt-3">
+                                Upload a <code class="text-lg">.MOL2</code> file to begin the prediction sequence and observe the ensemble flow.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PREDICT_ENDPOINT = "/predict"; 
+        const GET_REFS_ENDPOINT = "/get_references";
+
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('mol2_upload');
+        const refSelect = document.getElementById('ref_choice');
+        const submitButton = document.getElementById('submit-button');
+        const dropZone = document.getElementById('drop-zone');
+        const dropText = document.getElementById('drop-text');
+        const statusAlert = document.getElementById('status-alert');
+        const flowContainer = document.getElementById('flow-container');
+        const initialMessage = document.getElementById('initial-message');
+        const inputBox = document.getElementById('input-box');
+        const processingBox = document.getElementById('processing-box');
+        const metaModelBox = document.getElementById('meta-model-box');
+        const xgbModelGrid = document.getElementById('xgb-model-grid');
+        const mlpModelGrid = document.getElementById('mlp-model-grid');
+        const modelTemplate = document.getElementById('model-template');
+
+        const MODEL_METADATA = {
+            'VINA_XGB_PRED':    { name: 'AutoDock Vina',      r2: 0.9080, type: 'XGB', fullname: 'AutoDock Vina V1.2.5 + XGBoost' },
+            'AD4_XGB_PRED':     { name: 'AutoDock 4.2',       r2: 0.6910, type: 'XGB', fullname: 'AutoDock 4.2.6 + XGBoost' },
+            'VINARDO_XGB_PRED': { name: 'Vinardo Scoring',    r2: 0.6001, type: 'XGB', fullname: 'Vinardo Scoring Engine + XGBoost' },
+            'DOCK6_XGB_PRED':   { name: 'UCSF DOCK 6',        r2: 0.4505, type: 'XGB', fullname: 'UCSF DOCK 6.9 Grid + XGBoost' },
+            
+            'VINA_MLP_PRED':    { name: 'AutoDock Vina',      r2: 0.9057, type: 'MLP', fullname: 'AutoDock Vina V1.2.5 + Deep MLP' },
+            'AD4_MLP_PRED':     { name: 'AutoDock 4.2',       r2: 0.4815, type: 'MLP', fullname: 'AutoDock 4.2.6 + Deep MLP' },
+            'VINARDO_MLP_PRED': { name: 'Vinardo Scoring',    r2: 0.6037, type: 'MLP', fullname: 'Vinardo Scoring Engine + Deep MLP' },
+            'DOCK6_MLP_PRED':   { name: 'UCSF DOCK 6',        r2: 0.3850, type: 'MLP', fullname: 'UCSF DOCK 6.9 Grid + Deep MLP' }
+        };
+
+        const MODEL_ORDER = Object.keys(MODEL_METADATA);
+
+        // Dynamic Reference Structure Loader
+        async function populateReferenceDropdown() {
+            try {
+                const response = await fetch(GET_REFS_ENDPOINT);
+                const data = await response.json();
+                if (data.status === 'success' && data.references && data.references.length > 0) {
+                    refSelect.innerHTML = '';
+                    data.references.forEach(refName => {
+                        const opt = document.createElement('option');
+                        opt.value = refName;
+                        opt.textContent = `${refName}.mol2` + (refName === data.default ? ' (Default Crystal Template)' : '');
+                        if (refName === data.default) opt.selected = true;
+                        refSelect.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.warn("Could not load reference list dynamically, using default dropdown option.", e);
+            }
+        }
+
+        function initializeModelGrid() {
+            xgbModelGrid.innerHTML = '';
+            mlpModelGrid.innerHTML = '';
+
+            MODEL_ORDER.forEach(modelName => {
+                const meta = MODEL_METADATA[modelName];
+                const isXGB = meta.type === 'XGB';
+                const clone = modelTemplate.content.cloneNode(true);
+                const card = clone.querySelector('.model-card');
+                
+                card.id = `model-card-${modelName}`;
+                card.setAttribute('data-r2', meta.r2);
+                
+                card.querySelector('[data-id="dock-engine"]').textContent = meta.name;
+                card.querySelector('[data-id="name"]').textContent = meta.fullname;
+                card.querySelector('[data-id="r2-label"]').textContent = `R² = ${meta.r2.toFixed(4)}`;
+                card.querySelector('[data-id="bar"]').id = `bar-${modelName}`;
+                card.querySelector('[data-id="score"]').id = `score-${modelName}`;
+
+                const badge = card.querySelector('[data-id="badge"]');
+                badge.textContent = meta.type;
+                if (isXGB) {
+                    badge.classList.add('bg-emerald-950', 'text-emerald-400', 'border', 'border-emerald-700/50');
+                } else {
+                    badge.classList.add('bg-purple-950', 'text-purple-400', 'border', 'border-purple-700/50');
+                }
+
+                if (isXGB) {
+                    xgbModelGrid.appendChild(card);
+                } else {
+                    mlpModelGrid.appendChild(card);
+                }
+            });
+        }
+        
+        function showAlert(message, type = 'info') {
+            statusAlert.classList.remove('hidden', 'bg-red-800', 'bg-green-800', 'bg-blue-800', 'border-red-600', 'border-green-600', 'border-blue-600');
+            statusAlert.textContent = message;
+            if (type === 'error') {
+                statusAlert.classList.add('bg-red-800', 'border-red-600');
+            } else if (type === 'success') {
+                statusAlert.classList.add('bg-green-800', 'border-green-600');
+            } else {
+                statusAlert.classList.add('bg-blue-800', 'border-blue-600');
+            }
+        }
+
+        function toggleButtonState(enabled, text = 'Initiate Ensemble Prediction') {
+            submitButton.disabled = !enabled;
+            submitButton.textContent = text;
+            if (enabled) {
+                submitButton.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                submitButton.classList.add('bg-blue-600', 'hover:bg-blue-500', 'text-white');
+            } else {
+                submitButton.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                submitButton.classList.remove('bg-blue-600', 'hover:bg-blue-500', 'text-white');
+            }
+        }
+        
+        function renderMolecularProfile(profile) {
+            const placeholder = document.getElementById('profile-placeholder');
+            const details = document.getElementById('profile-details');
+            const featCount = document.getElementById('prof-feat-count');
+
+            if (!profile || Object.keys(profile).length === 0) {
+                placeholder.classList.remove('hidden');
+                details.classList.add('hidden');
+                featCount.textContent = '-- Features';
+                return;
+            }
+
+            placeholder.classList.add('hidden');
+            details.classList.remove('hidden');
+
+            featCount.textContent = `${profile.total_features.toLocaleString()} Features Generated`;
+
+            // SMILES
+            const smilesEl = document.getElementById('prof-smiles');
+            smilesEl.textContent = profile.smiles;
+            smilesEl.title = profile.smiles;
+
+            // Physicochemicals
+            document.getElementById('prof-mw').textContent = `${profile.mw.toFixed(2)} g/mol`;
+            document.getElementById('prof-logp').textContent = `LogP ${profile.logp.toFixed(2)}`;
+            document.getElementById('prof-tpsa').textContent = `TPSA ${profile.tpsa.toFixed(2)} Å²`;
+            document.getElementById('prof-hbdhba').textContent = `HBD ${profile.hbd} | HBA ${profile.hba}`;
+            document.getElementById('prof-rotb').textContent = `${profile.rotb} Bonds`;
+            document.getElementById('prof-charge').textContent = `${profile.charge > 0 ? '+' : ''}${profile.charge}`;
+
+            // Alignment Engine
+            const lsStatusEl = document.getElementById('prof-ls-status');
+            lsStatusEl.textContent = profile.ls_status;
+            if (profile.ls_status === 'SUCCESS') {
+                lsStatusEl.className = 'text-green-400 font-bold';
+            } else {
+                lsStatusEl.className = 'text-yellow-400 font-bold';
+            }
+
+            document.getElementById('prof-ref').textContent = `${profile.ref_name}.mol2`;
+            document.getElementById('prof-rmsd').textContent = `${profile.rmsd.toFixed(3)} Å`;
+            document.getElementById('prof-com').textContent = `${profile.com_dist.toFixed(3)} Å`;
+            document.getElementById('prof-size').textContent = `${profile.q_size} / ${profile.t_size} Atoms`;
+            document.getElementById('prof-pcq').textContent = profile.pc_q.toFixed(4);
+            document.getElementById('prof-jaccard').textContent = profile.jaccard.toFixed(4);
+        }
+
+        function resetFlowDiagram() {
+            flowContainer.classList.add('hidden');
+            initialMessage.classList.remove('hidden');
+            inputBox.classList.remove('active-pulse', 'bg-blue-500', 'text-black');
+            inputBox.classList.add('bg-gray-800');
+            metaModelBox.classList.remove('active-pulse', 'warning-red-glow');
+            metaModelBox.style.backgroundColor = 'rgba(13, 17, 23, 0.7)';
+            metaModelBox.classList.remove('border-green-500', 'border-red-600');
+            metaModelBox.classList.add('border-blue-500');
+            
+            const metaHeader = metaModelBox.querySelector('.text-2xl');
+            metaHeader.textContent = "FINAL CONSENSUS SCORE";
+            metaHeader.classList.remove('text-red-400', 'text-green-400');
+            metaHeader.classList.add('text-blue-400');
+            
+            document.getElementById('flow-filename').textContent = 'Awaiting File...';
+            document.getElementById('flow-result-filename').textContent = '--';
+            document.getElementById('final-score').textContent = '--';
+
+            document.querySelectorAll('.model-bar').forEach(bar => {
+                bar.style.width = '0%';
+                bar.classList.remove('model-xgb', 'model-mlp', 'bg-red-700');
+            });
+            document.querySelectorAll('.model-card').forEach(card => {
+                card.classList.remove('active-pulse', 'warning-red-glow', 'border-green-500', 'border-purple-500', 'border-red-600');
+                card.classList.add('border-gray-700');
+                card.querySelector('[data-id="dock-engine"]').classList.remove('text-red-400');
+            });
+            document.querySelectorAll('[data-id="score"]').forEach(score => {
+                score.textContent = 'Score: N/A';
+            });
+
+            renderMolecularProfile(null);
+        }
+        
+        function resetUI() {
+            statusAlert.classList.add('hidden');
+            dropZone.classList.remove('drop-zone-active');
+            dropText.innerHTML = '<span class="font-bold text-blue-300">Click to upload</span> or drag and drop.';
+            fileInput.value = null; 
+            toggleButtonState(false);
+            resetFlowDiagram();
+        }
+
+        function animatePrediction(result) {
+            const baseScores = result.base_scores || {};
+            const finalScore = parseFloat(result.final_score); 
+            const FINAL_OOD_VALUE = 50.0;
+            
+            inputBox.classList.remove('bg-gray-800');
+            inputBox.classList.add('active-pulse', 'bg-blue-500', 'text-black');
+            document.getElementById('flow-filename').textContent = result.filename;
+            initialMessage.classList.add('hidden');
+            flowContainer.classList.remove('hidden');
+
+            // Render live molecular profile panel on left sidebar
+            if (result.profile) {
+                renderMolecularProfile(result.profile);
+            }
+            
+            setTimeout(() => {
+                inputBox.classList.remove('active-pulse', 'bg-blue-500', 'text-black');
+                inputBox.classList.add('bg-gray-800');
+                showAlert('Feature Extraction Complete. Initializing Parallel Models...', 'info');
+            }, 1000); 
+
+            setTimeout(() => {
+                let animationDuration = 0;
+                
+                MODEL_ORDER.forEach((modelName, index) => {
+                    const meta = MODEL_METADATA[modelName];
+                    const confidence = Math.max(30, Math.round(meta.r2 * 100));
+                    const isXGB = meta.type === 'XGB';
+                    
+                    const bar = document.getElementById(`bar-${modelName}`);
+                    const scoreDiv = document.getElementById(`score-${modelName}`);
+                    const card = document.getElementById(`model-card-${modelName}`);
+                    
+                    const staggerDelay = index * 50;
+                    const completionTime = 1000;
+
+                    const shortName = modelName.replace('_PRED', '');
+                    const b2Name = `B2_${shortName}`;
+                    
+                    let rawVal = baseScores[modelName] !== undefined ? baseScores[modelName] :
+                                (baseScores[b2Name] !== undefined ? baseScores[b2Name] :
+                                (baseScores[shortName] !== undefined ? baseScores[shortName] : -7.0));
+
+                    let displayScore = parseFloat(rawVal);
+
+                    if (Math.abs(displayScore - FINAL_OOD_VALUE) < 0.01) {
+                         bar.style.width = '100%';
+                         bar.classList.add('bg-red-700');
+                         scoreDiv.textContent = 'OOD (Not Used)';
+                         card.classList.add('warning-red-glow');
+                         card.querySelector('[data-id="dock-engine"]').classList.add('text-red-400');
+                         card.classList.remove('border-gray-700');
+                    } else {
+                         bar.style.width = `${confidence}%`;
+                         bar.classList.add(isXGB ? 'model-xgb' : 'model-mlp');
+                         card.classList.add('active-pulse');
+                         card.classList.remove('border-gray-700');
+                         card.classList.add(isXGB ? 'border-green-500' : 'border-purple-500');
+                         
+                         setTimeout(() => {
+                             scoreDiv.textContent = `Score: ${displayScore.toFixed(4)} kcal/mol`;
+                             card.classList.remove('active-pulse');
+                         }, 100 + staggerDelay + completionTime);
+                    }
+                    
+                    animationDuration = Math.max(animationDuration, staggerDelay + completionTime);
+                });
+                
+                setTimeout(() => {
+                    showAlert('Base Models Complete. Fusing results...', 'info');
+                    metaModelBox.classList.add('active-pulse');
+                    metaModelBox.style.backgroundColor = 'rgba(88, 166, 255, 0.1)'; 
+                }, 100 + animationDuration + 500);
+
+                setTimeout(() => {
+                    const metaHeader = metaModelBox.querySelector('.text-2xl');
+                    if (Math.abs(finalScore - FINAL_OOD_VALUE) < 0.01) {
+                        document.getElementById('final-score').textContent = "OOD FAILURE";
+                        metaModelBox.style.backgroundColor = 'rgba(60, 10, 10, 0.8)';
+                        metaModelBox.classList.add('warning-red-glow', 'border-red-600');
+                        metaModelBox.classList.remove('border-blue-500');
+                        metaHeader.textContent = "INPUT OUT OF DOMAIN";
+                        metaHeader.classList.remove('text-blue-400');
+                        metaHeader.classList.add('text-red-400');
+                        showAlert(`OOD ERROR: Molecule too large or invalid. Prediction blocked.`, 'error');
+                    } else {
+                        document.getElementById('final-score').textContent = finalScore.toFixed(4) + ' kcal/mol';
+                        metaModelBox.style.backgroundColor = 'rgba(20, 100, 20, 0.5)';
+                        metaModelBox.classList.remove('warning-red-glow', 'border-blue-500');
+                        metaModelBox.classList.add('border-green-500');
+                        metaHeader.textContent = "FINAL CONSENSUS SCORE";
+                        metaHeader.classList.add('text-green-400');
+                        metaHeader.classList.remove('text-blue-400');
+                        
+                        const refUsedNote = result.reference_used ? ` | Ref: ${result.reference_used}.mol2` : '';
+                        showAlert(`SUCCESS! Final Affinity: ${finalScore.toFixed(4)} kcal/mol${refUsedNote}`, 'success');
+                    }
+
+                    document.getElementById('flow-result-filename').textContent = result.filename;
+                    metaModelBox.classList.remove('active-pulse');
+                    toggleButtonState(true);
+
+                }, 100 + animationDuration + 1500);
+
+            }, 1000);
+        }
+
+        // Drop Zone Drag & Drop Logic
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drop-zone-active'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drop-zone-active'), false);
+        });
+        dropZone.addEventListener('drop', handleDrop, false);
+        
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length === 1 && files[0].name.toLowerCase().endsWith('.mol2')) {
+                fileInput.files = files;
+                handleFileInputChange();
+            } else {
+                showAlert('Input Error: Please drop only one .mol2 file.', 'error');
+            }
+        }
+        fileInput.addEventListener('change', handleFileInputChange);
+        function handleFileInputChange() {
+            resetFlowDiagram();
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if (file.name.toLowerCase().endsWith('.mol2')) {
+                    dropText.textContent = `FILE LOADED: ${file.name}`;
+                    toggleButtonState(true);
+                    statusAlert.classList.add('hidden');
+                } else {
+                    showAlert('Input Error: Invalid file type. Please select a .mol2 file.', 'error');
+                    toggleButtonState(false);
+                }
+            } else {
+                resetUI();
+            }
+        }
+
+        // Form Submit Handler
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!fileInput.files.length) { showAlert('Input Error: Select a MOL2 file.', 'error'); return; }
+
+            const file = fileInput.files[0];
+            const selectedRef = refSelect.value;
+
+            const formData = new FormData();
+            formData.append('mol2_file', file);
+            formData.append('ref_choice', selectedRef);
+            
+            toggleButtonState(false, 'EXECUTING: Awaiting Server Response...');
+            resetFlowDiagram();
+            showAlert('Sending file to server for processing...', 'info');
+
+            try {
+                const response = await fetch(PREDICT_ENDPOINT, { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (response.ok) {
+                    animatePrediction(result);
+                } else {
+                    const errorMsg = result.error || 'Server error, check console.';
+                    showAlert(`Prediction failed: ${errorMsg}`, 'error');
+                    toggleButtonState(true);
+                }
+
+            } catch (error) {
+                console.error("Network or Fetch Error:", error);
+                showAlert(`Connection Error. Check Flask Server console.`, 'error');
+                toggleButtonState(true);
+            }
+        });
+
+        // Initialize UI & Populate Reference Dropdown on startup
+        populateReferenceDropdown();
+        initializeModelGrid();
+        resetUI();
+    </script>
+</body>
+</html>
