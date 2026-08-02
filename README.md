@@ -143,5 +143,18 @@ Click Initiate Ensemble Prediction to view real-time molecular profiling, struct
 📜 Reproducible Docking Protocols
 For researchers interested in replicating or inspecting the original computational workflow, step-by-step docking execution scripts, configuration files, grid parameter files (.gpf), and docking parameter files (.dpf) are documented inside the protocols/ directory.
 
+## 📬 Contact
+
+For questions, collaborations, or scientific discussions regarding STACPRED:
+
+**BVMS Kumara**  
+Bachelor of Pharmacy (Hons), General Sir John Kotelawala Defence University, Sri Lanka
+
+📧 Email: bvmskumara@yahoo.com  
+🔗 GitHub: https://github.com/bvms-kumara
+🔗 LinkedIn: https://www.linkedin.com/in/malaka-sandaruwan-6674561b7/
+
+I welcome discussions related to computational pharmacology, machine learning applications in drug discovery, and SIRT1-targeted research.
+
 📄 License
 Distributed under the MIT License. See LICENSE for more information.
