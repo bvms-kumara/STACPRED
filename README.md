@@ -18,59 +18,41 @@ Traditional molecular docking scoring functions frequently suffer from high fals
 
 ## 📊 Comprehensive Model Performance & Benchmark Analysis
 
-### 1. Overall Model Performance ($R^2$ Comparison)
-STACPRED integrates an 8-model base ensemble fused via regularized linear regression (**RidgeCV**). As shown below, the meta-stack consensus model successfully surpasses all individual base estimators, achieving a peak test validation **$R^2 = 0.9154$**.
+## 🎯 Scientific Significance & Innovations
 
-![Model Performance R2](figures/Fig2_Model_Performance_R2.png)
 
-* **Tier 1 Base Performance:** Tree-based models (XGBoost) consistently outperform deep neural networks (MLP) across matching docking force fields, with Vina-XGB leading individual base performance ($R^2 = 0.9080$).
-* **Tier 2 Consensus Gain:** The meta-stacking strategy captures complementary non-linear patterns across diverse scoring functions, reducing overall residual variance.
 
----
+1. **Consensus Variance Reduction:** By integrating scoring outputs from **AutoDock Vina**, **AutoDock 4.2**, **Vinardo**, and **UCSF DOCK 6**, STACPRED minimizes systematic scoring errors inherent to individual force fields.
 
-### 2. Parity Analysis: Base Model vs. Meta-Stack Consensus
-The parity plots below contrast the prediction error distribution of the top single base model (**Vina XGB**) against the **STACPRED Meta-Stack Consensus**.
+2. **High-Dimensional Feature Representation:** The framework computes **2,085 molecular descriptors** per query compound, encompassing 2D/3D physicochemical properties, ECFP Morgan topological fingerprints, MACCS structural keys, and quantitative 3D structural alignment metrics via **LSalign** (calculating RMSD, PC-scores, Jaccard overlap, and center-of-mass distances against benchmark reference templates).
 
-![Parity Plots](figures/Fig1_Parity_Plots_Vina_vs_MetaStack.png)
+3. **Translational Web Console:** Beyond standard research scripts, STACPRED includes an interactive, real-time **Flask web console** featuring live feature extraction diagnostics, alignment evaluation, model confidence weighting, and complete base-estimator contribution breakdowns.
 
-* **Reasoning:** The meta-stack consensus narrows the spread around the ideal diagonal line ($y = x$), minimizing extreme over- and under-estimations common in isolated docking engines.
+
 
 ---
 
-### 3. Stacking Meta-Learner Weight Distribution ($\alpha = 2.0565$)
-The RidgeCV meta-learner assigns explicit linear coefficients to each base model to optimize consensus prediction.
 
-![Meta Weights](figures/Fig3_Stacking_Meta_Weights.png)
 
-* **Core Driver:** **Vina XGB** dominates the positive feature weight ($1.1769$), reflecting its robust correlation with experimental binding affinities. 
-* **Regularization Role:** Auxiliary estimators (such as Vinardo, AD4, and DOCK6 variants) receive balanced minor or negative corrective weights to suppress systematic force-field biases and orthogonal noise.
+## ⚙️ Model Architecture & Performance
 
----
 
-### 4. Docking Engine Binding Energy Behavior
-The violin distributions highlight the distinct energy scales and variance profiles across the four underlying physics engines (**Vinardo, Vina, AD4, and DOCK6**).
 
-![Binding Energy Distributions](figures/Fig4_Binding_Energy_Distributions.png)
+STACPRED relies on an **8-model heterogeneous ensemble** integrated via a regularized linear regression meta-learner (**RidgeCV**):
 
-* **Observation:** While Vina, Vinardo, and AD4 operate within a tightly bounded energy range ($\approx -5$ to $-10\text{ kcal/mol}$), UCSF DOCK6 exhibits wider energetic spreads and extreme outliers, emphasizing the necessity of machine learning outlier filtering and feature scaling prior to ensemble integration.
 
----
 
-### 5. Residual Error Contraction & Variance Reduction
-Kernel density estimation of residual errors ($\Delta G_{\text{True}} - \Delta G_{\text{Pred}}$) illustrates the superior precision of the ensemble framework.
+* **Tier 1: Base Estimators (8 Models):**
 
-![Residual Error Distributions](figures/Fig6_Residual_Error_Distributions.png)
+  * **XGBoost Ensembles (4):** Vina-XGB ($R^2 = 0.9080$), AD4-XGB ($R^2 = 0.6910$), Vinardo-XGB ($R^2 = 0.6001$), DOCK6-XGB ($R^2 = 0.4505$).
 
-* **Statistical Gain:** STACPRED compresses the residual standard deviation down to **$\sigma = 0.17\text{ kcal/mol}$** (outperforming Vina XGB at $\sigma = 0.18\text{ kcal/mol}$ and drastically suppressing the high variance seen in raw DOCK6 models at $\sigma = 2.45$).
+  * **Deep Neural Networks (4):** Vina-MLP ($R^2 = 0.9057$), Vinardo-MLP ($R^2 = 0.6037$), AD4-MLP ($R^2 = 0.4815$), DOCK6-MLP ($R^2 = 0.3850$).
 
----
+* **Tier 2: Meta-Learner:**
 
-### 6. Cheminformatics Feature Correlation Matrix
-The multi-dimensional feature space incorporates over 2,085 structural descriptors, including ECFP Morgan fingerprints, physicochemical properties, and 3D **LSalign** structural alignment metrics.
+  * **RidgeCV Meta-Stacker:** Fuses base predictions to achieve a final cross-validated stacked performance of **$R^2 = 0.9154$**.
 
-![Feature Correlation Heatmap](figures/Fig5_Feature_Correlation_Heatmap.png)
 
-* **Key Insights:** Moderate-to-strong correlations between topological fingerprints (`tan_morgan`), molecular weight (`MolWt`), and alignment metrics (`JaccardR`, `rms_d`) provide the multi-faceted feature matrix necessary for robust binding affinity inference.
 
 ---
 
