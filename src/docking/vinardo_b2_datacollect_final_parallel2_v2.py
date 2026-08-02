@@ -29,10 +29,10 @@ RDLogger.DisableLog('rdApp.*')
 # ======================================================================
 # --- CONFIGURATION ---
 # ======================================================================
-MOL2_DIR = "/home/kumara/malakafahs/dock/allosteric/vinardo/poses_mol2"
-LOG_DIR = "/home/kumara/malakafahs/dock/allosteric/vinardo/pose_logs"
+MOL2_DIR = "/home/.........../poses_mol2"
+LOG_DIR = "/home/.........../pose_logs"
 LSALIGN_EXE = "./LSalign"
-REFERENCE_MOL2 = "4tq_reference.mol2"
+REFERENCE_MOL2 = "reference.mol2"
 OUTPUT_CSV = "b2_vinardo_results_v2.csv"
 NUM_CORES = 16
 MOLECULE_LIMIT = 0

@@ -33,16 +33,16 @@ RDLogger.DisableLog('rdApp.*')
 # ======================================================================
 
 # 1. Directory containing the docked pose MOL2 files.
-MOL2_DIR = "/home/kumara/malakafahs/dock/allosteric/vina_gpu/poses_mol2"
+MOL2_DIR = "/home/.........../poses_mol2"
 
 # 2. Directory containing the matching log files with binding affinity.
-LOG_DIR = "/home/kumara/malakafahs/dock/allosteric/vina_gpu/pose_logs"
+LOG_DIR = "/home/.........../pose_logs"
 
 # 3. Path to the LSalign executable (e.g., './LSalign').
 LSALIGN_EXE = "./LSalign"
 
 # 4. Path to the reference MOL2 file for RMSD/Tanimoto calculations.
-REFERENCE_MOL2 = "4tq_reference.mol2"
+REFERENCE_MOL2 = "reference.mol2"
 
 # 5. The final name and path for the output CSV file.
 OUTPUT_CSV = "b2_vina_gpu_results.csv" # TEST OUTPUT

@@ -3,7 +3,7 @@ import os
 import subprocess
 
 # ===== CONFIGURATION =====
-mgltools_base = "/home/malaka-sandaruwan/newdirectory/mgltools_x86_64Linux2_1.5.7"
+mgltools_base = "/home/.........../mgltools_x86_64Linux2_1.5.7"
 input_folder = "pdb_outputs"
 output_folder = "prepared_ligands"
 

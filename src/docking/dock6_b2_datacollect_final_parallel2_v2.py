@@ -29,10 +29,10 @@ RDLogger.DisableLog('rdApp.*')
 # ======================================================================
 # --- CONFIGURATION ---
 # ======================================================================
-MOL2_DIR = "/home/kumara/malakafahs/dock/allosteric/dock6/separated_mol2"
-LOG_DIR = "/home/kumara/malakafahs/dock/allosteric/dock6/separated_logs"
+MOL2_DIR = "/home/.........../separated_mol2"
+LOG_DIR = "/home/.........../separated_logs"
 LSALIGN_EXE = "./LSalign"
-REFERENCE_MOL2 = "4tq_reference.mol2"
+REFERENCE_MOL2 = "reference.mol2"
 OUTPUT_CSV = "b2_dock6_results_v2.csv"
 NUM_CORES = 16
 MOLECULE_LIMIT = 0
