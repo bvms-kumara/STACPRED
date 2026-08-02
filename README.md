@@ -16,8 +16,6 @@ Traditional molecular docking scoring functions frequently suffer from high fals
 ---
 ![Overview](figures/overview.png)
 
-## 📊 Comprehensive Model Performance & Benchmark Analysis
-
 ## 🎯 Scientific Significance & Innovations
 
 
