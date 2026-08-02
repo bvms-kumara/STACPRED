@@ -117,14 +117,20 @@ source env/bin/activate
 ```bash
 python -m pip install --upgrade pip
 pip install -e .
+```
 
-## 💻 Running the Web Application Console
-
+💻 Running the Web Application Console
 Launch the Flask Server:
 
+```Bash
 python web_app/app.py
+```
 
-Access the Web Console: Open your browser and navigate to http://127.0.0.1:8000.
+Access the Web Console:
+
+Open your browser and navigate to
+ 
+```http://127.0.0.1:8000.```
 
 Execute Predictions:
 
@@ -134,11 +140,8 @@ Drag and drop your target ligand .mol2 file into the upload zone.
 
 Click Initiate Ensemble Prediction to view real-time molecular profiling, structural alignment validation, base model contributions, and the final stacked consensus score.
 
-## 📜 Reproducible Docking Protocols
-
+📜 Reproducible Docking Protocols
 For researchers interested in replicating or inspecting the original computational workflow, step-by-step docking execution scripts, configuration files, grid parameter files (.gpf), and docking parameter files (.dpf) are documented inside the protocols/ directory.
 
-
-## 📄 License
-
+📄 License
 Distributed under the MIT License. See LICENSE for more information.
