@@ -14,6 +14,7 @@
 Traditional molecular docking scoring functions frequently suffer from high false-positive rates and force-field biases. STACPRED overcomes these limitations through a **two-tier stacking meta-learner architecture** that fuses consensus outputs from four independent physics-based docking engines processed across heterogeneous machine learning paradigms (Extreme Gradient Boosting and Deep Multi-Layer Perceptrons).
 
 ---
+![Overview](figures/overview.png)
 
 ## 📊 Comprehensive Model Performance & Benchmark Analysis
 
