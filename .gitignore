@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pkl
+*.log
+*.tmp
+
+# Large docking files
+*.dlg
+*.map
+*.fld
+
+# OS
+.DS_Store
+Thumbs.db
