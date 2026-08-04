@@ -90,7 +90,7 @@ STACPRED/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/STACPRED.git
+git clone https://github.com/bvms-kumara/STACPRED.git
 cd STACPRED
 ```
 
